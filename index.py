@@ -9,6 +9,10 @@ import numpy as np
 
 import time
 
+from common import count_tokens
+
+from agent import make_paper
+
 r = redis.Redis(host='localhost', port=6379, db=0)
 
 from api_keys import organisation, api_key
@@ -31,10 +35,18 @@ with open('index.json', 'r') as f:
     items = json.loads(f.read())
 
 count = 0
-
+count_tokn = 0
+stories_text = ''
 for item in items:
     if item['score']>5:
         count += 1
-        print(f'[{item["id"]}] {item["title"]}')
+        story = f'[{item["id"]}] {item["title"]}\n'
+        count_tokn += count_tokens(story)
+        stories_text += story
+        if count_tokn > 4000:
+            break
 
+print('num stories:',count)
+
+make_paper(stories_text)
 
