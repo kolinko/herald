@@ -41,7 +41,7 @@ stories_items = {}
 for item in items:
     if item['score']>5:
         count += 1
-        story = f'[{item["id"]}] {item["title"]}\n'
+        story = f'[{item["score"]}] {item["title"]}\n' # replace with id
         count_tokn += count_tokens(story)
         stories_items[str(item["id"])] = item
         stories_text += story
@@ -50,5 +50,7 @@ for item in items:
 
 print('num stories:',count)
 
+print(stories_text)
+exit()
 make_paper(stories_items)
 
