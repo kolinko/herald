@@ -20,6 +20,21 @@ Reformat the reply to be in json:'''+'''
 {"title":..., "sources":[source_ids]}
 '''
 
+
+'''
+Your journalists provided these stories for the day:
+
+"Elon's Secret Army: Musk's Twitter Takeover and the Plot to Control the Web"
+"Chromebook Catastrophe: Millions Crumble as Schools Suffer"
+"Pandemonium in Parrot Paradise: Birds Learn to Video Call and Mayhem Ensues"
+"Whale of a Heist: The Undersea Submarine Smuggling Operation"
+"Pichai's Payday Pandemonium: Alphabet CEO's $200M Bonanza Amid Company Cutbacks"
+
+Write a brief, two-paragraph op-ed that will fit the front page. The words of wisdom that will encourage your readers to read the rest.
+'''
+
+
+
 Title: "Tech Tabloid Tales"
 
 Harvey "Clickbait" Carmichael - Editor-in-Chief

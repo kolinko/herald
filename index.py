@@ -37,16 +37,18 @@ with open('index.json', 'r') as f:
 count = 0
 count_tokn = 0
 stories_text = ''
+stories_items = {}
 for item in items:
     if item['score']>5:
         count += 1
         story = f'[{item["id"]}] {item["title"]}\n'
         count_tokn += count_tokens(story)
+        stories_items[str(item["id"])] = item
         stories_text += story
         if count_tokn > 4000:
             break
 
 print('num stories:',count)
 
-make_paper(stories_text)
+make_paper(stories_items)
 

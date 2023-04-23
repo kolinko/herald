@@ -1,3 +1,23 @@
+import openai
+
+from api_keys import organisation, api_key
+openai.organization = organisation
+openai.api_key = api_key
+
+import json
+from common import json_fetch
+
+from fetch import fetch_text
+
+def ai(system, prompt):
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": prompt}
+    ]
+    completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    return completion.choices[0].message.content
+
+
 title = "Hacker Herald"
 
 journalists = {
@@ -20,8 +40,259 @@ editor_in_chief = {
     'bio':'''A seasoned journalist with a nose for scandal, Harvey "Clickbait" Carmichael has made a name for himself in the world of tech news with his unparalleled ability to turn even the smallest rumors into full-blown controversies. He started as a tech blogger and built his reputation on digging up dirt on tech giants. A master of sensational headlines, Harvey knows how to attract readers with his bold, eye-catching articles. Despite his questionable ethics, he maintains a vast network of industry insiders who supply him with the latest gossip.'''
 }
 
+marketer = {
+    'name':'''Chuck "The Huckster" Malone - Gadget Guru & Marketing Mastermind''',
+    'bio':'''Chuck "The Huckster" Malone is a sleazy, yet dimwitted marketing expert who specializes in concocting outrageous and unbelievable gadgets that he believes will captivate the readers. Despite his ineptitude, Chuck's wild imagination and unwavering confidence in his ludicrous inventions make him an oddly entertaining presence in the office. His articles showcasing bizarre and impractical products never fail to amuse, leaving readers wondering if he's a genius or simply a master of the absurd.'''
+}
 
-def make_paper(stories):
-    print('hello')
+def make_stories(your_name, your_bio, others, stories):
+    print(f'asking {your_name}')
+
+    harvey_prompt = f'''
+I'm writing a parody story about an editorial office of a tabloid paper covering tech news, titled "Hacker Herald" 
+
+Two characters in the story:
+
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+
+You are:
+{your_name}
+{your_bio}
+
+Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
+
+If you get asked to write a story, choose one theme, don't merge various themes.
+
+Reformat the reply to be in json:'''+'''
+[{"title":..., "sources":[source_ids]},{"title":...}]
+
+Three titles max, three sources max per title.
+'''
+
+    user_prompt = f"""Harvey, leaning on your desk with an intense expression, demands, "We need a front-page story from you for the day. Pick something from this list and whip up a headline that'll make our readers' jaws drop!
+
+{others}
+
+{stories}
+
+"""
+
+    result = ai(harvey_prompt, user_prompt)
+    return result
+
+def make_paper(_):
+    with open('paper.json', 'r') as f:
+        paper = json.loads(f.read())
+
+    stories = ''
+
+    for story in paper['stories']:
+        stories += '- '+ story['title'] + '\n'
+
+    harvey_prompt = f'''
+I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
+
+The paper is titled "Hacker Herald", and it's based on Hacker News news.
+
+You are:
+{marketer['name']}
+{marketer['bio']}
+
+Your editor in chief is:
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+
+
+Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
+
+Reply in a following json form:'''+'''
+[{'name':'first product name', 'company': 'fake company name', 'description': 'fake two-sentence description', 'price': 'price. doesn't have to be in actual money. can be stuff like "your soul"'}]
+    '''
+
+    user_prompt = f'''Harvey walks into your office. He says:
+Chuck! We're ready to publish the current issue, but we need some bullshit products to sell to our readers. Invent something that is vaguely related to today's stories. Four things. Go!
+
+    {stories}'''
+
+    res = ai(harvey_prompt, user_prompt)
+    print(res)
+    res = json.loads(res)
+    paper['ads'] = res
+
+    with open('paper.json', 'w') as f:
+        f.write(json.dumps(paper, indent=2))
     exit()
+
+def make_paper_third(stories_items):
+    with open('paper.json', 'r') as f:
+        paper = json.loads(f.read())
+
+    for story in paper['stories']:
+        name = story['author']
+        bio = journalists[name]
+
+        source_id = str(story['sources'][0])
+        source = json_fetch('item', source_id)
+#        print(json.dumps(source))
+
+        story['source_url'] = source['url']
+        source_text = fetch_text(source['url']) # can fail if source url doesn't exist. should try other sources then
+
+        harvey_prompt = f'''
+I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
+
+The paper is titled "Hacker Herald", and it's based on Hacker News news.
+
+You are:
+{name}
+{bio}
+
+Your editor in chief is:
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+
+Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
+
+Reply in a following form:
+===title
+(title here)
+===lead
+(1-paragraph lead that will go ona  front page)
+===text
+(4 paragraphs of article text)'''
+
+        user_prompt = f'''
+    Harvey walks into your office. He says:
+"Allright, we have a title, and below is the original. Write a story based on a source! "
+
+Our title: 
+{story['title']}
+
+Original:
+{source_text}
+
+* If the source is unreadable (e.g. website says you're not allowed to read it as a bot), in article text, complain hilariously about that website not being accessible, and somehow tie it to the main story, which you can then make up based on a title alone. (and say that you're making stuff up).
+    '''
+
+#        print()
+#        print(harvey_prompt)
+#        print('#####\n\n\n')
+#        print(user_prompt)
+
+        print(f'Asking {name}...')
+
+        result = None
+        count=''
+
+        while result is None:
+
+            reply = ai(harvey_prompt, user_prompt+count)
+
+            if '===title' not in reply:
+                count += '\nremember about formatting'
+                continue
+
+            if '===lead' not in reply:
+                count += '\nremember about formatting'
+                continue
+
+            if '===text' not in reply:
+                count += '\nremember about formatting'
+                continue
+
+            print(reply)
+
+            result = {}
+            result['title'] = reply[len('===title '):reply.find('===lead')]
+            result['lead'] = reply[reply.find('===lead')+len('===lead '):reply.find('===text')]
+            result['text'] = reply[reply.find('===text')+len('===text '):]
+
+            story['full_story'] = result
+
+
+    with open('paper.json', 'w') as f:
+        f.write(json.dumps(paper, indent=2))
+
+
+
+def make_paper_second(_):
+    with open('paper.json', 'r') as f:
+        paper = json.loads(f.read())
+
+    stories = ''
+    for story in paper:
+        stories += '- ' + story['title'] + '\n'
+
+    harvey_prompt = f'''
+I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
+
+The paper is titled "Hacker Herald", and it's based on Hacker News news.
+
+You are:
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+
+
+Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
+'''
+    user_prompt = f'''
+Your journalists delivered these stories for the day:
+
+{stories}
+
+Write a brief, two-paragraph editor's note that will fit the front page. The words of wisdom that will encourage your readers to read the rest :)
+'''
+
+    note = ai(harvey_prompt, user_prompt)
+
+    paper = {
+        'stories': paper,
+        'editors_note': note,
+    }
+
+    with open('paper.json', 'w') as f:
+        f.write(json.dumps(paper, indent=2))
+
+
+
+
+def make_paper_first(stories):
+    """ prepare a table of contents """
+
+    others = ''
+
+    paper = []
+
+    for your_name in journalists:
+        your_bio = journalists[your_name]
+
+        result = None
+        while result is None:
+            out_txt = make_stories(your_name, your_bio, others, stories)
+            try:
+                result = json.loads(out_txt)
+            except:
+                print(f"{out}\nbad json? retrying")
+  
+        # TODO: make Harvey choose the best story
+
+        picked = result[0]
+
+        if others == '':
+            others = 'Others already took these stories, so pick something else than them:\n'
+        
+        others += picked['title'] + '\n'
+        picked['author'] = your_name
+        paper.append(picked)
+
+        print(json.dumps(result, indent=2))
+
+        print('paper so far:')
+        print(json.dumps(paper, indent=2))
+
+    with open('paper.json', 'w') as f:
+        f.write(json.dumps(paper, indent=2))
+
+#        exit()
 
