@@ -45,43 +45,50 @@ marketer = {
     'bio':'''Chuck "The Huckster" Malone is a sleazy, yet dimwitted marketing expert who specializes in concocting outrageous and unbelievable gadgets that he believes will captivate the readers. Despite his ineptitude, Chuck's wild imagination and unwavering confidence in his ludicrous inventions make him an oddly entertaining presence in the office. His articles showcasing bizarre and impractical products never fail to amuse, leaving readers wondering if he's a genius or simply a master of the absurd.'''
 }
 
-def make_stories(your_name, your_bio, others, stories):
-    print(f'asking {your_name}')
-
-    harvey_prompt = f'''
-I'm writing a parody story about an editorial office of a tabloid paper covering tech news, titled "Hacker Herald" 
-
-Two characters in the story:
-
-{editor_in_chief['name']}
-{editor_in_chief['bio']}
-
-You are:
-{your_name}
-{your_bio}
-
-Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
-
-If you get asked to write a story, choose one theme, don't merge various themes.
-
-Reformat the reply to be in json:'''+'''
-[{"title":..., "sources":[source_ids]},{"title":...}]
-
-Three titles max, three sources max per title.
-'''
-
-    user_prompt = f"""Harvey, leaning on your desk with an intense expression, demands, "We need a front-page story from you for the day. Pick something from this list and whip up a headline that'll make our readers' jaws drop!
-
-{others}
-
-{stories}
-
-"""
-
-    result = ai(harvey_prompt, user_prompt)
-    return result
-
 def make_paper(_):
+    with open('paper.json', 'r') as f:
+        paper = json.loads(f.read())
+
+    stories_html = ''
+
+    for story in paper['stories']:
+        stories_html += f'''
+            <a href="id">{story['title']}</a><br>
+            {story['full_story']['lead']}<br>
+        '''
+
+    ads_html = ''
+
+    for ad in paper['ads']:
+        ads_html += f'''
+    <h4>{ad['name']}</h4>
+    <h5>by {ad['company']}</h5>
+    {ad['description']}<br>
+    price:  {ad['price']}<br><br>
+        '''
+
+
+    editors_note = paper['editors_note'].replace('\n', '<br>')
+
+    html = f'''
+<head>
+<body>
+<h1>{title}</h1>
+<h2>Editor's note</h2>
+{editors_note}
+<h2>Today's stories</h2>
+{stories_html}
+<h2>Ads</h2>
+{ads_html}
+</body>
+</html>
+    '''
+
+    with open('index_tmp.html', 'w') as f:
+        f.write(html)
+    exit()
+
+def make_paper_fourth(_):
     with open('paper.json', 'r') as f:
         paper = json.loads(f.read())
 
@@ -103,7 +110,6 @@ Your editor in chief is:
 {editor_in_chief['name']}
 {editor_in_chief['bio']}
 
-
 Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
 
 Reply in a following json form:'''+'''
@@ -122,6 +128,7 @@ Chuck! We're ready to publish the current issue, but we need some bullshit produ
 
     with open('paper.json', 'w') as f:
         f.write(json.dumps(paper, indent=2))
+
     exit()
 
 def make_paper_third(stories_items):
@@ -255,6 +262,41 @@ Write a brief, two-paragraph editor's note that will fit the front page. The wor
         f.write(json.dumps(paper, indent=2))
 
 
+def make_stories(your_name, your_bio, others, stories):
+    print(f'asking {your_name}')
+
+    harvey_prompt = f'''
+I'm writing a parody story about an editorial office of a tabloid paper covering tech news, titled "Hacker Herald" 
+
+Two characters in the story:
+
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+
+You are:
+{your_name}
+{your_bio}
+
+Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
+
+If you get asked to write a story, choose one theme, don't merge various themes.
+
+Reformat the reply to be in json:'''+'''
+[{"title":..., "sources":[source_ids]},{"title":...}]
+
+Three titles max, three sources max per title.
+'''
+
+    user_prompt = f"""Harvey, leaning on your desk with an intense expression, demands, "We need a front-page story from you for the day. Pick something from this list and whip up a headline that'll make our readers' jaws drop!
+
+{others}
+
+{stories}
+
+"""
+
+    result = ai(harvey_prompt, user_prompt)
+    return result
 
 
 def make_paper_first(stories):

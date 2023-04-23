@@ -93,5 +93,31 @@
       }
     }
   ],
-  "editors_note": "Welcome, loyal seekers of the latest techno-scandals, to another jaw-dropping edition of the Hacker Herald! It's your trusty Editor-in-Chief, Harvey \"Clickbait\" Carmichael, here to serve up a tantalizing smorgasbord of the juiciest gossip and most shocking revelations of the entire tech world. Grab your morning coffee and brace yourselves, for we're about to delve into the dark underbelly of all things digital, from the shady dealings of our beloved billionaire CEOs to the confounding mysteries of scientific blunders that leave experts baffled.\n\nFeast your eyes on Elon Musk's most scandalous scheme yet, \"Elon's Achille's Heel: Musk's Media Manipulation Exposed!\" Unearth the truth about Alphabet CEO's unapologetic fortune-gathering in \"Pichai Scoops $200M Amid Cutbacks!\" Get all riled up by the brewing war between Twitter power users and paid checkmarks with \"Block the Blue\"! You won't want to miss the soberingly hilarious tale of how a single-digit typo shocked mathematicians and controlled the Python Universe! Plus, you'll laugh, you'll cry, and you'll hazard a guess at the truth behind Earth's largest and most deceptive cryo-con, Greenland's disappearing act. So what are you waiting for, dear reader? Turn the page, and let the juicy gossip commence!\n"
+  "editors_note": "Welcome, loyal seekers of the latest techno-scandals, to another jaw-dropping edition of the Hacker Herald! It's your trusty Editor-in-Chief, Harvey \"Clickbait\" Carmichael, here to serve up a tantalizing smorgasbord of the juiciest gossip and most shocking revelations of the entire tech world. Grab your morning coffee and brace yourselves, for we're about to delve into the dark underbelly of all things digital, from the shady dealings of our beloved billionaire CEOs to the confounding mysteries of scientific blunders that leave experts baffled.\n\nFeast your eyes on Elon Musk's most scandalous scheme yet, \"Elon's Achille's Heel: Musk's Media Manipulation Exposed!\" Unearth the truth about Alphabet CEO's unapologetic fortune-gathering in \"Pichai Scoops $200M Amid Cutbacks!\" Get all riled up by the brewing war between Twitter power users and paid checkmarks with \"Block the Blue\"! You won't want to miss the soberingly hilarious tale of how a single-digit typo shocked mathematicians and controlled the Python Universe! Plus, you'll laugh, you'll cry, and you'll hazard a guess at the truth behind Earth's largest and most deceptive cryo-con, Greenland's disappearing act. So what are you waiting for, dear reader? Turn the page, and let the juicy gossip commence!\n",
+  "ads": [
+    {
+      "name": "Elon's Ego Eraser",
+      "company": "Musk Media Meltdown",
+      "description": "This high-tech gadget disarms every online post mentioning Elon Musk, rendering his media manipulation efforts futile. Powered by negative Musk-energy, it recharges itself after each use!",
+      "price": "1 Mars colonization seat"
+    },
+    {
+      "name": "Pichai's Pocket Shocker",
+      "company": "Alphabet Alliteration Inc.",
+      "description": "This jaw-dropping device turns Alphabet CEO Sundar Pichai's astounding fortune into a miniature, pocket-sized amount! Witness your wealth shrink before your eyes in a pinch!",
+      "price": "200,000,000 Alphabet Good-Guy Tokens"
+    },
+    {
+      "name": "Bird-Box Banter",
+      "company": "Viral Vocals Ltd.",
+      "description": "The ultimate gadget for lonely parrots everywhere! Bird-Box Banter allows your feathery friends to participate in video calls and engage in scintillating aviary conversations, eliminating their loneliness forever!",
+      "price": "5 pounds of premium bird seed"
+    },
+    {
+      "name": "Python Pitfall Protector",
+      "company": "Syntax Surprises International",
+      "description": "No more single-digit typos wreaking havoc in your code! The Python Pitfall Protector auto-detects single-digit errors and eliminates their universe-shattering potential by sending them to an alternate reality!",
+      "price": "3.1415926 karmic balance"
+    }
+  ]
 }
