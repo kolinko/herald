@@ -52,6 +52,104 @@ def make_paper(_):
     stories_html = ''
 
     for story in paper['stories']:
+        story_html = '''<!DOCTYPE html>
+<html lang="en">
+
+<link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: Verdana, Geneva, sans-serif, "Roboto", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 2;
+    color: #333;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+td {
+    font-family: "Playfair Display", Times, serif;
+    font-size:30px;    
+}
+
+h1 {
+    font-family: "Playfair Display", Times, serif;
+
+    font-size: 48px;
+    margin-bottom: 0px;
+    font-weight: bold;
+}
+
+h2 {
+    font-family: "Georgia", Times, serif;
+
+    font-size: 36px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+h5, h4 {
+    margin-top:0px;
+    margin-bottom:0px;
+
+}
+
+a {
+    font-family: "Georgia", Times, serif;
+
+    color: #1a1a1a;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #0000ff;
+}
+
+.ads-section {
+    margin-top: 20px;
+}
+
+h3 {
+    font-family: "Georgia", Times, serif;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+dd {
+    margin-bottom:20px;
+}
+dt{
+    font-weight:bold;
+}
+</style>'''+f'''
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{story['title']}</title>
+</head>
+<body>
+  <h1>Hacker Herald</h1>
+
+  <article>
+    <h2>{story['title']}</h2>
+    <p><em>By {story['author']}</em></p>
+    <p><strong>Date:</strong> 23 Apr 2023</p>
+    <b><i>{story['full_story']['lead']}</b></i>
+    <p>{story['full_story']['text']}</p>
+  </article>
+</body>
+</html>'''
+
+        with open(f"{story['sources'][0]}_.html", 'w') as f:
+            f.write(story_html)
+
+    exit()
+
+    for story in paper['stories']:
         stories_html += f'''
             <a href="id">{story['title']}</a><br>
             {story['full_story']['lead']}<br>
