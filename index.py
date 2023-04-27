@@ -9,6 +9,8 @@ import numpy as np
 
 import time
 
+import datetime
+
 from common import count_tokens
 
 from agent import make_paper
@@ -22,6 +24,11 @@ openai.api_key = api_key
 idx = []
 
 start_time = time.time() 
+
+def pretty_time(ts):
+    dt = datetime.datetime.fromtimestamp(ts)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
 
 def reset():
     global start_time
@@ -45,12 +52,16 @@ for item in items:
         count_tokn += count_tokens(story)
         stories_items[str(item["id"])] = item
         stories_text += story
+        oldest = item['time']
+        
         if count_tokn > 4000:
             break
 
+print(pretty_time(oldest))
+
 print('num stories:',count)
 
-print(stories_text)
+#print(stories_text)
 exit()
 make_paper(stories_items)
 
