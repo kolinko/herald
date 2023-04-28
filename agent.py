@@ -1,22 +1,14 @@
 import openai
 
-from api_keys import organisation, api_key
-openai.organization = organisation
-openai.api_key = api_key
 
 import json
-from common import json_fetch
+from common import json_fetch, ai, ai3
 
-from fetch import fetch_text
+from fetch import fetch_text, fetch_article
 
-def ai(system, prompt):
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": prompt}
-    ]
-    completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
-    return completion.choices[0].message.content
-
+ISSUE = "27-04-2023"
+ISSUE_FNAME = f"paper.{ISSUE}.json"
+ISSUE_DATE = "27&nbsp;Apr&nbsp;2023"
 
 title = "Hacker Herald"
 
@@ -45,95 +37,34 @@ marketer = {
     'bio':'''Chuck "The Huckster" Malone is a sleazy, yet dimwitted marketing expert who specializes in concocting outrageous and unbelievable gadgets that he believes will captivate the readers. Despite his ineptitude, Chuck's wild imagination and unwavering confidence in his ludicrous inventions make him an oddly entertaining presence in the office. His articles showcasing bizarre and impractical products never fail to amuse, leaving readers wondering if he's a genius or simply a master of the absurd.'''
 }
 
-def make_paper(_):
-    with open('paper.json', 'r') as f:
+def make_paper():
+    with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
     stories_html = ''
 
-    for story in paper['stories']:
-        story_html = '''<!DOCTYPE html>
+    HEAD = f'''
+    <!DOCTYPE html>
 <html lang="en">
-
-<link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-
-<style>
-body {
-    font-family: Verdana, Geneva, sans-serif, "Roboto", Arial, sans-serif;
-    font-size: 16px;
-    line-height: 2;
-    color: #333;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-td {
-    font-family: "Playfair Display", Times, serif;
-    font-size:30px;    
-}
-
-h1 {
-    font-family: "Playfair Display", Times, serif;
-
-    font-size: 48px;
-    margin-bottom: 0px;
-    font-weight: bold;
-}
-
-h2 {
-    font-family: "Georgia", Times, serif;
-
-    font-size: 36px;
-    margin-bottom: 10px;
-    font-weight: bold;
-}
-
-h5, h4 {
-    margin-top:0px;
-    margin-bottom:0px;
-
-}
-
-a {
-    font-family: "Georgia", Times, serif;
-
-    color: #1a1a1a;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-a:hover {
-    color: #0000ff;
-}
-
-.ads-section {
-    margin-top: 20px;
-}
-
-h3 {
-    font-family: "Georgia", Times, serif;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: left;
-    margin-bottom: 20px;
-}
-
-dd {
-    margin-bottom:20px;
-}
-dt{
-    font-weight:bold;
-}
-</style>'''+f'''
 <head>
+  <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{story['title']}</title>
+  <title>{title}</title>
 </head>
 <body>
-  <h1>Hacker Herald</h1>
 
+    <table style="border:0px solid black" width=100%>
+    <tr>
+        <td><h1>{title}</h1></td>
+        <td width=20px valign=top style="padding-top:40px">{ISSUE_DATE}</td>
+    </tr>
+    </table>
+    '''
+
+    for story in paper['stories']:
+        story_html = HEAD + f'''
   <article>
     <h2>{story['title']}</h2>
     <p><em>By {story['author']}</em></p>
@@ -144,15 +75,14 @@ dt{
 </body>
 </html>'''
 
-        with open(f"{story['sources'][0]}_.html", 'w') as f:
+        with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
             f.write(story_html)
 
-    exit()
 
     for story in paper['stories']:
         stories_html += f'''
-            <a href="id">{story['title']}</a><br>
-            {story['full_story']['lead']}<br>
+            <a href="{story['sources'][0]}.html">{story['title']}</a><br>
+            {story['full_story']['lead']}<br><br>
         '''
 
     ads_html = ''
@@ -162,16 +92,13 @@ dt{
     <h4>{ad['name']}</h4>
     <h5>by {ad['company']}</h5>
     {ad['description']}<br>
-    price:  {ad['price']}<br><br>
+    <b>price:</b>  {ad['price']}<br><br>
         '''
 
 
     editors_note = paper['editors_note'].replace('\n', '<br>')
 
-    html = f'''
-<head>
-<body>
-<h1>{title}</h1>
+    html = HEAD + f'''
 <h2>Editor's note</h2>
 {editors_note}
 <h2>Today's stories</h2>
@@ -182,12 +109,12 @@ dt{
 </html>
     '''
 
-    with open('index_tmp.html', 'w') as f:
+    with open(f'{ISSUE}/index.html', 'w') as f:
         f.write(html)
     exit()
 
-def make_paper_fourth(_):
-    with open('paper.json', 'r') as f:
+def make_paper_fourth():
+    with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
     stories = ''
@@ -221,16 +148,21 @@ Chuck! We're ready to publish the current issue, but we need some bullshit produ
 
     res = ai(harvey_prompt, user_prompt)
     print(res)
-    res = json.loads(res)
+    try:
+        res = json.loads(res)
+    except:
+        res = ai3('fix json. output only pure json, no comments from your side', res)
+        print(res)
+        res = json.loads(res)
     paper['ads'] = res
 
-    with open('paper.json', 'w') as f:
+    with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
 
     exit()
 
 def make_paper_third(stories_items):
-    with open('paper.json', 'r') as f:
+    with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
     for story in paper['stories']:
@@ -242,7 +174,7 @@ def make_paper_third(stories_items):
 #        print(json.dumps(source))
 
         story['source_url'] = source['url']
-        source_text = fetch_text(source['url']) # can fail if source url doesn't exist. should try other sources then
+        source_text = fetch_article(source['url']) # can fail if source url doesn't exist. should try other sources then
 
         harvey_prompt = f'''
 I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
@@ -316,13 +248,13 @@ Original:
             story['full_story'] = result
 
 
-    with open('paper.json', 'w') as f:
+    with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
 
 
 
-def make_paper_second(_):
-    with open('paper.json', 'r') as f:
+def make_paper_second():
+    with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
     stories = ''
@@ -356,7 +288,7 @@ Write a brief, two-paragraph editor's note that will fit the front page. The wor
         'editors_note': note,
     }
 
-    with open('paper.json', 'w') as f:
+    with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
 
 
@@ -380,7 +312,7 @@ Remember that this is a comedy/parody, so make everything factual, but hilarious
 If you get asked to write a story, choose one theme, don't merge various themes.
 
 Reformat the reply to be in json:'''+'''
-[{"title":..., "sources":[source_ids]},{"title":...}]
+[{"title":..., "sources":[source_ids], "why":(five words why this story fits your speciality)},{"title":...}]
 
 Three titles max, three sources max per title.
 '''
@@ -431,7 +363,7 @@ def make_paper_first(stories):
         print('paper so far:')
         print(json.dumps(paper, indent=2))
 
-    with open('paper.json', 'w') as f:
+    with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
 
 #        exit()

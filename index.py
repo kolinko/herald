@@ -13,7 +13,7 @@ import datetime
 
 from common import count_tokens
 
-from agent import make_paper
+from agent import * #make_paper, make_paper_first, make_paper_second, make_paper_third
 
 r = redis.Redis(host='localhost', port=6379, db=0)
 
@@ -48,12 +48,12 @@ stories_items = {}
 for item in items:
     if item['score']>5:
         count += 1
-        story = f'[{item["score"]}] {item["title"]}\n' # replace with id
+        story = f'[{item["id"]}] {item["title"]}\n' # replace with id
         count_tokn += count_tokens(story)
         stories_items[str(item["id"])] = item
         stories_text += story
         oldest = item['time']
-        
+
         if count_tokn > 4000:
             break
 
@@ -61,7 +61,8 @@ print(pretty_time(oldest))
 
 print('num stories:',count)
 
-#print(stories_text)
-exit()
-make_paper(stories_items)
-
+#make_paper_first(stories_text)
+#make_paper_second()
+#make_paper_third(stories_items)
+#make_paper_fourth()
+make_paper()

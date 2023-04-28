@@ -5,6 +5,7 @@ import json
 
 
 import random
+import hashlib
 
 r = redis.Redis(host='localhost', port=6379, db=0)
 
@@ -12,6 +13,36 @@ import time
 
 import tiktoken
 encoding = tiktoken.get_encoding("cl100k_base") # gpt2 for gpt3, and cl100k_base for gpt3turbo
+
+import openai
+from api_keys import organisation, api_key
+openai.organization = organisation
+openai.api_key = api_key
+
+
+def md5(s):
+    return hashlib.md5(s.encode('utf-8')).hexdigest()
+
+def ai3(system, prompt):
+    return ai(system, prompt, "gpt-3.5-turbo")
+
+def ai(system, prompt, model="gpt-4"):
+    cache_key = f'ai-cache:{model}:' + md5(system+'***'+prompt)
+    if r.exists(cache_key):
+        print('using ai cache...')
+        return r.get(cache_key).decode('utf-8')
+
+
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": prompt}
+    ]
+    completion = openai.ChatCompletion.create(model=model, messages=messages)
+    result = completion.choices[0].message.content
+
+    r.set(cache_key, result)
+    return result
+
 
 def count_tokens(s):
     input_ids = encoding.encode(s)
@@ -25,6 +56,7 @@ def download(url):
     response = requests.get(url)
     response.raise_for_status() # Check for any HTTP errors
     return response.content
+
 
 def download_and_cache(url, cache_only=False):
     # Check if the content is already cached
