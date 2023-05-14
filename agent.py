@@ -1,16 +1,54 @@
 import openai
 
+import os
 
 import json
-from common import json_fetch, ai, ai3
+from common import json_fetch, ai, ai3, download_and_cache
 
 from fetch import fetch_text, fetch_article
 
-ISSUE = "27-04-2023"
+import tqdm
+
+ISSUE_DAY = 11
+ISSUE_MONTH = 5
+ISSUE_YEAR = 2023
+
+ISSUE = f"{ISSUE_DAY}-{ISSUE_MONTH}-{ISSUE_YEAR}"
 ISSUE_FNAME = f"paper.{ISSUE}.json"
-ISSUE_DATE = "27&nbsp;Apr&nbsp;2023"
+
+month_names = {
+    1: "January", 2: "February", 3: "March", 4: "April", 5: "May",
+    6: "June", 7: "July", 8: "August", 9: "September",
+    10: "October", 11: "November", 12: "December"}
+
+def day_suffix(day):
+    if 4 <= day <= 20 or 24 <= day <= 30:
+        return "th"
+    else:
+        return ["st", "nd", "rd"][day % 10 - 1]
+
+ISSUE_DATE = f"{ISSUE_DAY}<span style='font-size:15px'>{day_suffix(ISSUE_DAY)}</span>&nbsp;{month_names[ISSUE_MONTH]}&nbsp;{ISSUE_YEAR}"
 
 title = "Hacker Herald"
+
+def check_dir():
+    if not os.path.exists(ISSUE):
+        os.makedirs(ISSUE)
+
+check_dir()
+
+short_names = {
+    'Felicity "Scoop" Sanders - Senior Reporter':'Scoop',
+    'Chip "The Geek" Gallagher - Tech Expert':'The Geek',
+    'Daphne "The Whisperer" Lane - Gossip Columnist':'The Whisperer',
+    'Lenny "Deadline" Dawson - Staff Writer':'Deadline',
+    'Father Wojciech "The Holy Scribe" Kowalski - Ethics Consultant':'Holy Scribe',
+    'Olivia "The Dreamer" Thompson - Junior Reporter':'The Dreamer',
+    'Dr. Benjamin "Nobel Scribe" Clarke - Science Columnist':'Nobel Scribe',   
+    '''Betsy "The Oracle" O'Hara - Social Media Manager''':'The Oracle',
+    '''Harvey "Clickbait" Carmichael - Editor-in-Chief''':'Harvey',
+    '''Chuck "The Huckster" Malone - Gadget Guru & Marketing Mastermind''':'The Huckster'
+}
 
 journalists = {
     'Felicity "Scoop" Sanders - Senior Reporter':'''Felicity "Scoop" Sanders is known for her tenacious pursuit of breaking news stories. She will go to any lengths to uncover the truth, whether that means staking out tech conferences or posing as a janitor to infiltrate a secretive start-up. Her colleagues often joke that she has the instincts of a bloodhound. While her methods may be unorthodox, Felicity's investigative skills are unmatched and she often breaks major stories before anyone else.''',
@@ -37,18 +75,18 @@ marketer = {
     'bio':'''Chuck "The Huckster" Malone is a sleazy, yet dimwitted marketing expert who specializes in concocting outrageous and unbelievable gadgets that he believes will captivate the readers. Despite his ineptitude, Chuck's wild imagination and unwavering confidence in his ludicrous inventions make him an oddly entertaining presence in the office. His articles showcasing bizarre and impractical products never fail to amuse, leaving readers wondering if he's a genius or simply a master of the absurd.'''
 }
 
-def make_paper():
+def make_paper_fifth():
     with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
     stories_html = ''
 
     HEAD = f'''
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <link href="style.css" rel="stylesheet">
+  <link href="../style.css" rel="stylesheet">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
@@ -78,24 +116,31 @@ def make_paper():
         with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
             f.write(story_html)
 
-
     for story in paper['stories']:
         stories_html += f'''
             <a href="{story['sources'][0]}.html">{story['title']}</a><br>
             {story['full_story']['lead']}<br><br>
         '''
 
-    ads_html = ''
+    ads_html = '<h2>Ads</h2>'
 
     for ad in paper['ads']:
-        ads_html += f'''
-    <h4>{ad['name']}</h4>
-    <h5>by {ad['company']}</h5>
-    {ad['description']}<br>
-    <b>price:</b>  {ad['price']}<br><br>
-        '''
+        # we need to check for each field, sometimes gpt doesn't generate some of them
 
+        if 'name' in ad:
+            ads_html += f"<h4>{ad['name']}</h4>"
+        else:
+            continue # no name - no ad at all. shouldn't happen usually
 
+        if 'company' in ad:
+            ads_html += f"<h5>by {ad['company']}</h5>"
+        if 'description' in ad:
+            ads_html += f"{ad['description']}<br>"
+        if 'price' in ad:
+            ads_html += f"<b>price:</b>  {ad['price']}<br>"
+        ads_html += "<br>"
+
+        
     editors_note = paper['editors_note'].replace('\n', '<br>')
 
     html = HEAD + f'''
@@ -103,17 +148,18 @@ def make_paper():
 {editors_note}
 <h2>Today's stories</h2>
 {stories_html}
-<h2>Ads</h2>
 {ads_html}
+<h2>Editorial Team</h2>
 </body>
 </html>
     '''
 
     with open(f'{ISSUE}/index.html', 'w') as f:
         f.write(html)
-    exit()
 
 def make_paper_fourth():
+    print('generating ads...')
+
     with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
@@ -147,36 +193,34 @@ Chuck! We're ready to publish the current issue, but we need some bullshit produ
     {stories}'''
 
     res = ai(harvey_prompt, user_prompt)
-    print(res)
     try:
         res = json.loads(res)
     except:
         res = ai3('fix json. output only pure json, no comments from your side', res)
-        print(res)
         res = json.loads(res)
     paper['ads'] = res
 
     with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
 
-    exit()
 
-def make_paper_third(stories_items):
-    with open(ISSUE_FNAME, 'r') as f:
-        paper = json.loads(f.read())
+def make_full_story(story):
+    short_name = short_names[story['author']]
+    name = story['author']
+    bio = journalists[name]
 
-    for story in paper['stories']:
-        name = story['author']
-        bio = journalists[name]
-
-        source_id = str(story['sources'][0])
-        source = json_fetch('item', source_id)
+    source_id = str(story['sources'][0])
+    source = json_fetch('item', source_id)
 #        print(json.dumps(source))
 
-        story['source_url'] = source['url']
-        source_text = fetch_article(source['url']) # can fail if source url doesn't exist. should try other sources then
+    story['source_url'] = source['url']
+    status_dict[short_name] = f"fetching: {source['url'][:50]} ..."
+    source_text = fetch_article(source['url']) # can fail if source url doesn't exist. should try other sources then
 
-        harvey_prompt = f'''
+    if '==error' in source_text:
+        print(source_text)
+
+    harvey_prompt = f'''
 I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
 
 The paper is titled "Hacker Herald", and it's based on Hacker News news.
@@ -199,8 +243,8 @@ Reply in a following form:
 ===text
 (4 paragraphs of article text)'''
 
-        user_prompt = f'''
-    Harvey walks into your office. He says:
+    user_prompt = f'''
+Harvey walks into your office. He says:
 "Allright, we have a title, and below is the original. Write a story based on a source! "
 
 Our title: 
@@ -210,50 +254,222 @@ Original:
 {source_text}
 
 * If the source is unreadable (e.g. website says you're not allowed to read it as a bot), in article text, complain hilariously about that website not being accessible, and somehow tie it to the main story, which you can then make up based on a title alone. (and say that you're making stuff up).
-    '''
+'''
 
-#        print()
-#        print(harvey_prompt)
-#        print('#####\n\n\n')
-#        print(user_prompt)
 
-        print(f'Asking {name}...')
+    result = None
+    count=''
 
-        result = None
-        count=''
+    while result is None:
+        status_dict[short_name] = "writing article..."
+        reply = ai(harvey_prompt, user_prompt+count)
 
-        while result is None:
+        if '===title' not in reply:
+            count += '\nremember about formatting'
+            continue
 
-            reply = ai(harvey_prompt, user_prompt+count)
+        if '===lead' not in reply:
+            count += '\nremember about formatting'
+            continue
 
-            if '===title' not in reply:
-                count += '\nremember about formatting'
-                continue
+        if '===text' not in reply:
+            count += '\nremember about formatting'
+            continue
 
-            if '===lead' not in reply:
-                count += '\nremember about formatting'
-                continue
+        result = {}
+        result['title'] = reply[len('===title '):reply.find('===lead')]
+        result['lead'] = reply[reply.find('===lead')+len('===lead '):reply.find('===text')]
+        result['text'] = reply[reply.find('===text')+len('===text '):]
 
-            if '===text' not in reply:
-                count += '\nremember about formatting'
-                continue
+    return result
 
-            print(reply)
+import threading
+status_dict = {}
+import time
 
-            result = {}
-            result['title'] = reply[len('===title '):reply.find('===lead')]
-            result['lead'] = reply[reply.find('===lead')+len('===lead '):reply.find('===text')]
-            result['text'] = reply[reply.find('===text')+len('===text '):]
+def get_full_story(story):
+    status_dict[short_names[story['author']]] = 'working...'
+    story['full_story'] = make_full_story(story)
+    status_dict[short_names[story['author']]] = 'Done'
+    return story
 
-            story['full_story'] = result
+def make_paper_third(stories_items):
+    with open(ISSUE_FNAME, 'r') as f:
+        paper = json.loads(f.read())
 
+    threads = []
+    for story in paper['stories']:
+        t = threading.Thread(target=get_full_story, args=(story,))
+        t.start()
+        threads.append(t)
+
+    time.sleep(1)
+    cursor_up_code = '\x1b[1A'
+    clear_line_code = '\x1b[2K'
+    while True:
+        print("\n".join([f"Story {k}: {v}" for k, v in status_dict.items()]))
+        time.sleep(1)  # Delay between updates
+        if all(value == 'Done' for value in status_dict.values()):  # If all tasks are done
+            break
+
+        print((cursor_up_code + clear_line_code) * len(status_dict), end='\r')
+
+
+    for t in threads:
+        t.join()
 
     with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
 
+# Define the base URL for the Hacker News API
+API_BASE_URL = "https://hacker-news.firebaseio.com/v0"
+
+# Define the endpoint for getting an item by ID
+API_ITEM_ENDPOINT = "item/{}.json?print=pretty"
+
+def make_pro_story(items): # experimental
+    with open(ISSUE_FNAME, 'r') as f:
+        paper = json.loads(f.read())
+
+    story = paper['stories'][5]
+    item = items[story['sources'][0]]
+    print(json.dumps(story, indent=2))
+    print(json.dumps(item, indent=2))
+
+    print('fetching kids')
+    kids = []
+    for kid_id in tqdm.tqdm(item['kids']):
+        kid_url = f"{API_BASE_URL}/{API_ITEM_ENDPOINT.format(kid_id)}"
+        kid = json.loads(download_and_cache(kid_url))
+        if 'text' in kid: # some deleted/banned comments don't have text - just skip them
+            kids.append(kid)
+
+    short_name = short_names[story['author']]
+    name = story['author']
+    bio = journalists[name]
+
+    source_id = str(story['sources'][0])
+    source = json_fetch('item', source_id)
+#        print(json.dumps(source))
+
+    story['source_url'] = source['url']
+    status_dict[short_name] = f"fetching: {source['url'][:50]} ..."
+    source_text = fetch_article(source['url']) # can fail if source url doesn't exist. should try other sources then
+
+    if '==error' in source_text:
+        print(source_text)
+
+    harvey_prompt = f'''
+I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
+
+The paper is titled "Hacker Herald", and it's based on Hacker News news.
+
+You are:
+{name}
+{bio}
+
+Your editor in chief is:
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+
+Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
+
+Reply in a following form:
+===title
+(title here)
+===lead
+(1-paragraph lead that will go ona  front page)
+===text
+(4 paragraphs of article text)'''
+
+    user_prompt = f'''
+Harvey walks into your office. He says:
+"Allright, we have a title, and below is the original. Write a story based on a source! "
+
+Our title: 
+{story['title']}
+
+Original:
+{source_text}
+
+* If the source is unreadable (e.g. website says you're not allowed to read it as a bot), in article text, complain hilariously about that website not being accessible, and somehow tie it to the main story, which you can then make up based on a title alone. (and say that you're making stuff up).
+'''
+
+
+    result = None
+    count=''
+
+    while result is None:
+        status_dict[short_name] = "writing article..."
+        reply = ai(harvey_prompt, user_prompt+count)
+
+        if '===title' not in reply:
+            count += '\nremember about formatting'
+            continue
+
+        if '===lead' not in reply:
+            count += '\nremember about formatting'
+            continue
+
+        if '===text' not in reply:
+            count += '\nremember about formatting'
+            continue
+
+        result = {}
+        result['title'] = reply[len('===title '):reply.find('===lead')]
+        result['lead'] = reply[reply.find('===lead')+len('===lead '):reply.find('===text')]
+        result['text'] = reply[reply.find('===text')+len('===text '):]
+
+    #
+    # generate html
+    #
+
+    HEAD = f'''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="../style.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+</head>
+<body>
+
+    <table style="border:0px solid black" width=100%>
+    <tr>
+        <td><h1>{title}</h1></td>
+        <td width=20px valign=top style="padding-top:40px">{ISSUE_DATE}</td>
+    </tr>
+    </table>
+    '''
+
+    formatted_text = story['full_story']['text'].replace('\n',"<br>")
+
+    story_html = HEAD + f'''
+  <article>
+    <h2>{story['title']}</h2>
+    <p><em>By {story['author']}</em></p>
+    <p><strong>Date:</strong> 23 Apr 2023</p>
+    <b><i>{story['full_story']['lead']}</b></i>
+    <p>{formatted_text}</p>
+    <p>Source: <a href="{item['url']}">{item['title']}</a> [<a href="https://news.ycombinator.com/item?id={item['id']}">discussion</a>]
+  </article>
+</body>
+</html>'''
+
+    for k in kids:
+        print(k['id'],'\n', k['text'],'\n')
+
+    with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
+        f.write(story_html)
+
+
+    return result
 
 
 def make_paper_second():
+    print("writing editors' note")
     with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
@@ -312,7 +528,7 @@ Remember that this is a comedy/parody, so make everything factual, but hilarious
 If you get asked to write a story, choose one theme, don't merge various themes.
 
 Reformat the reply to be in json:'''+'''
-[{"title":..., "sources":[source_ids], "why":(five words why this story fits your speciality)},{"title":...}]
+[{"why":(five words why this story fits your speciality), "title":..., "sources":[source_ids],"title":...},...]
 
 Three titles max, three sources max per title.
 '''
@@ -324,32 +540,44 @@ Three titles max, three sources max per title.
 {stories}
 
 """
+    result = None
 
-    result = ai(harvey_prompt, user_prompt)
+    while result is None:
+        out_txt = ai(harvey_prompt, user_prompt)
+        try:
+            result = json.loads(out_txt)
+        except:
+            print(f"{out_txt}\nbad json? retrying")
+
     return result
 
 
 def make_paper_first(stories):
     """ prepare a table of contents """
-
+    print('Asking each journalist to choose a subject and write a title for their piece...')
     others = ''
 
     paper = []
+    used_up = []
 
-    for your_name in journalists:
+    for your_name in tqdm.tqdm(journalists):
         your_bio = journalists[your_name]
 
-        result = None
-        while result is None:
-            out_txt = make_stories(your_name, your_bio, others, stories)
-            try:
-                result = json.loads(out_txt)
-            except:
-                print(f"{out}\nbad json? retrying")
+        stories_text = ''
+        for story_id in stories:
+            if story_id not in used_up:
+                stories_text += stories[story_id]['ai_text']
+
+        result = make_stories(your_name, your_bio, others, stories_text)
   
         # TODO: make Harvey choose the best story
 
         picked = result[0]
+        picked['sources'] = [str(src) for src in picked['sources']]
+
+        print(f'picked: {picked["title"]}')
+
+        used_up += picked['sources']
 
         if others == '':
             others = 'Others already took these stories, so pick something else than them:\n'
@@ -365,6 +593,4 @@ def make_paper_first(stories):
 
     with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
-
-#        exit()
 

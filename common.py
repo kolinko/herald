@@ -29,7 +29,6 @@ def ai3(system, prompt):
 def ai(system, prompt, model="gpt-4"):
     cache_key = f'ai-cache:{model}:' + md5(system+'***'+prompt)
     if r.exists(cache_key):
-        print('using ai cache...')
         return r.get(cache_key).decode('utf-8')
 
 
@@ -58,21 +57,14 @@ def download(url):
     return response.content
 
 
-def download_and_cache(url, cache_only=False):
+def download_and_cache(url, cache_only=False, key_prefix=''):
     # Check if the content is already cached
-    if cache_only:
-        if r.exists(url):
-            res = r.get(url)
-            if res is not None:
-                return res
-
-        return None
-
-
-    if r.exists(url):
-        res = r.get(url)
+    if r.exists(key_prefix+url):
+        res = r.get(key_prefix+url)
         if res is not None:
             return res
+    elif cache_only:
+        return None
 
     while True:
         try:
@@ -80,7 +72,7 @@ def download_and_cache(url, cache_only=False):
             response = requests.get(url)
             response.raise_for_status() # Check for any HTTP errors
             content = response.content
-            r.set(url, content)
+            r.set(key_prefix+url, content)
             return content
         except Exception as e:
             # Print the error message in red color
