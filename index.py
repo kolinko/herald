@@ -36,7 +36,6 @@ for item_id in tqdm.tqdm(item_ids):
 
 
 # filter new stories
-count = 0
 count_tokn = 0
 stories_text = ''
 stories_items = {}
@@ -46,7 +45,6 @@ for item in items:
         continue
     # /criteria
 
-    count += 1
     story = f'[{item["id"]}] {item["title"]}\n'
     item['ai_text'] = story
     count_tokn += count_tokens(story)
@@ -57,12 +55,11 @@ for item in items:
         break
 
 print('Oldest post:', pretty_time(items[-1]['time']))
-print('Number of stories:',count)
+print('Number of stories:',len(items))
 print('Token count:', count_tokn)
 
 make_paper_first(stories_items)
 make_paper_second()
-exit()
 make_paper_third(stories_items)
 make_paper_fourth()
 make_paper_fifth()
