@@ -5,7 +5,7 @@ import os
 import json
 from common import json_fetch, ai, ai3, download_and_cache
 
-from fetch import fetch_text, fetch_article
+from fetch import fetch_article
 
 import tqdm
 
@@ -262,17 +262,10 @@ Original:
 
     while result is None:
         status_dict[short_name] = "writing article..."
-        reply = ai(harvey_prompt, user_prompt+count)
+        reply = ai(harvey_prompt, user_prompt + count)
 
-        if '===title' not in reply:
-            count += '\nremember about formatting'
-            continue
-
-        if '===lead' not in reply:
-            count += '\nremember about formatting'
-            continue
-
-        if '===text' not in reply:
+        required_sections = 'title', 'lead', 'text'
+        if any(f'==={s}' not in reply for s in required_sections):
             count += '\nremember about formatting'
             continue
 
@@ -321,152 +314,6 @@ def make_paper_third(stories_items):
     with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
 
-# Define the base URL for the Hacker News API
-API_BASE_URL = "https://hacker-news.firebaseio.com/v0"
-
-# Define the endpoint for getting an item by ID
-API_ITEM_ENDPOINT = "item/{}.json?print=pretty"
-
-def make_pro_story(items): # experimental
-    with open(ISSUE_FNAME, 'r') as f:
-        paper = json.loads(f.read())
-
-    story = paper['stories'][5]
-    item = items[story['sources'][0]]
-    print(json.dumps(story, indent=2))
-    print(json.dumps(item, indent=2))
-
-    print('fetching kids')
-    kids = []
-    for kid_id in tqdm.tqdm(item['kids']):
-        kid_url = f"{API_BASE_URL}/{API_ITEM_ENDPOINT.format(kid_id)}"
-        kid = json.loads(download_and_cache(kid_url))
-        if 'text' in kid: # some deleted/banned comments don't have text - just skip them
-            kids.append(kid)
-
-    short_name = short_names[story['author']]
-    name = story['author']
-    bio = journalists[name]
-
-    source_id = str(story['sources'][0])
-    source = json_fetch('item', source_id)
-#        print(json.dumps(source))
-
-    story['source_url'] = source['url']
-    status_dict[short_name] = f"fetching: {source['url'][:50]} ..."
-    source_text = fetch_article(source['url']) # can fail if source url doesn't exist. should try other sources then
-
-    if '==error' in source_text:
-        print(source_text)
-
-    harvey_prompt = f'''
-I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
-
-The paper is titled "Hacker Herald", and it's based on Hacker News news.
-
-You are:
-{name}
-{bio}
-
-Your editor in chief is:
-{editor_in_chief['name']}
-{editor_in_chief['bio']}
-
-Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
-
-Reply in a following form:
-===title
-(title here)
-===lead
-(1-paragraph lead that will go ona  front page)
-===text
-(4 paragraphs of article text)'''
-
-    user_prompt = f'''
-Harvey walks into your office. He says:
-"Allright, we have a title, and below is the original. Write a story based on a source! "
-
-Our title: 
-{story['title']}
-
-Original:
-{source_text}
-
-* If the source is unreadable (e.g. website says you're not allowed to read it as a bot), in article text, complain hilariously about that website not being accessible, and somehow tie it to the main story, which you can then make up based on a title alone. (and say that you're making stuff up).
-'''
-
-
-    result = None
-    count=''
-
-    while result is None:
-        status_dict[short_name] = "writing article..."
-        reply = ai(harvey_prompt, user_prompt+count)
-
-        if '===title' not in reply:
-            count += '\nremember about formatting'
-            continue
-
-        if '===lead' not in reply:
-            count += '\nremember about formatting'
-            continue
-
-        if '===text' not in reply:
-            count += '\nremember about formatting'
-            continue
-
-        result = {}
-        result['title'] = reply[len('===title '):reply.find('===lead')]
-        result['lead'] = reply[reply.find('===lead')+len('===lead '):reply.find('===text')]
-        result['text'] = reply[reply.find('===text')+len('===text '):]
-
-    #
-    # generate html
-    #
-
-    HEAD = f'''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <link href="../style.css" rel="stylesheet">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{title}</title>
-</head>
-<body>
-
-    <table style="border:0px solid black" width=100%>
-    <tr>
-        <td><h1>{title}</h1></td>
-        <td width=20px valign=top style="padding-top:40px">{ISSUE_DATE}</td>
-    </tr>
-    </table>
-    '''
-
-    formatted_text = story['full_story']['text'].replace('\n',"<br>")
-
-    story_html = HEAD + f'''
-  <article>
-    <h2>{story['title']}</h2>
-    <p><em>By {story['author']}</em></p>
-    <p><strong>Date:</strong> 23 Apr 2023</p>
-    <b><i>{story['full_story']['lead']}</b></i>
-    <p>{formatted_text}</p>
-    <p>Source: <a href="{item['url']}">{item['title']}</a> [<a href="https://news.ycombinator.com/item?id={item['id']}">discussion</a>]
-  </article>
-</body>
-</html>'''
-
-    for k in kids:
-        print(k['id'],'\n', k['text'],'\n')
-
-    with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
-        f.write(story_html)
-
-
-    return result
-
 
 def make_paper_second():
     print("writing editors' note")
@@ -508,8 +355,51 @@ Write a brief, two-paragraph editor's note that will fit the front page. The wor
         f.write(json.dumps(paper, indent=2))
 
 
-def make_stories(your_name, your_bio, others, stories):
-    print(f'asking {your_name}')
+
+def make_paper_first(stories):
+    """ prepare a table of contents """
+    print('Asking each journalist to choose a subject and write a title for their piece...')
+    others = ''
+
+    paper = []
+    used_up = []
+
+    for your_name in tqdm.tqdm(journalists):
+        your_bio = journalists[your_name]
+
+        stories_text = ''
+        for story_id in stories:
+            if story_id not in used_up:
+                stories_text += stories[story_id]['ai_text']
+
+        result = choose_stories(your_name, your_bio, others, stories_text)
+  
+        # TODO: make Harvey choose the best story
+        picked = result[0]
+        picked['sources'] = [str(src) for src in picked['sources']]
+
+        print(f'picked: {picked["title"]}')
+
+        used_up += picked['sources']
+
+        if others == '':
+            others = 'Others already took these stories, so pick something else than them:\n'
+        
+        others += picked['title'] + '\n'
+        picked['author'] = your_name
+        paper.append(picked)
+
+        print(json.dumps(result, indent=2))
+
+        print('paper so far:')
+        print(json.dumps(paper, indent=2))
+
+    with open(ISSUE_FNAME, 'w') as f:
+        f.write(json.dumps(paper, indent=2))
+
+
+def choose_stories(your_name, your_bio, others, stories):
+    print(f'Asking {your_name}...')
 
     harvey_prompt = f'''
 I'm writing a parody story about an editorial office of a tabloid paper covering tech news, titled "Hacker Herald" 
@@ -533,64 +423,15 @@ Reformat the reply to be in json:'''+'''
 Three titles max, three sources max per title.
 '''
 
-    user_prompt = f"""Harvey, leaning on your desk with an intense expression, demands, "We need a front-page story from you for the day. Pick something from this list and whip up a headline that'll make our readers' jaws drop!
+    user_prompt = "Harvey, leaning on your desk with an intense expression, demands, " +\
+                  "We need a front-page story from you for the day. " +\
+                  "Pick something from this list and whip up a headline that'll make our readers' jaws drop!\n\n" +\
+                     others + "\n\n" +\
+                     stories
 
-{others}
-
-{stories}
-
-"""
-    result = None
-
-    while result is None:
+    while True:
         out_txt = ai(harvey_prompt, user_prompt)
         try:
-            result = json.loads(out_txt)
+            return json.loads(out_txt)
         except:
-            print(f"{out_txt}\nbad json? retrying")
-
-    return result
-
-
-def make_paper_first(stories):
-    """ prepare a table of contents """
-    print('Asking each journalist to choose a subject and write a title for their piece...')
-    others = ''
-
-    paper = []
-    used_up = []
-
-    for your_name in tqdm.tqdm(journalists):
-        your_bio = journalists[your_name]
-
-        stories_text = ''
-        for story_id in stories:
-            if story_id not in used_up:
-                stories_text += stories[story_id]['ai_text']
-
-        result = make_stories(your_name, your_bio, others, stories_text)
-  
-        # TODO: make Harvey choose the best story
-
-        picked = result[0]
-        picked['sources'] = [str(src) for src in picked['sources']]
-
-        print(f'picked: {picked["title"]}')
-
-        used_up += picked['sources']
-
-        if others == '':
-            others = 'Others already took these stories, so pick something else than them:\n'
-        
-        others += picked['title'] + '\n'
-        picked['author'] = your_name
-        paper.append(picked)
-
-        print(json.dumps(result, indent=2))
-
-        print('paper so far:')
-        print(json.dumps(paper, indent=2))
-
-    with open(ISSUE_FNAME, 'w') as f:
-        f.write(json.dumps(paper, indent=2))
-
+            print(f"{out_txt}\nBad json? Retrying...")

@@ -1,3 +1,10 @@
+#
+# a tool for scraping websites for articles
+# 
+# fetch_text(url) - fetches URL with a help of scraperAPI
+# fetch_article(url) - fetch_text + clean it up using GPT
+#
+
 from bs4 import BeautifulSoup
 import requests
 import api_keys
@@ -87,5 +94,3 @@ def split_parts(s):
             res[section] += l+'\n'
 
     return res
-
-

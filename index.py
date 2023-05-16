@@ -30,11 +30,10 @@ for item_id in tqdm.tqdm(item_ids):
     if 'url' not in item:
         continue
 
-    for ignore_host in ['youtube.com', 'twitter.com']:
-        if ignore_host in item['url']:
-            break
-    else:
+    ignore_hosts = ['youtube.com', 'twitter.com']
+    if not any(host in item['url'] for host in ignore_hosts):
         items.append(item)
+
 
 # filter new stories
 count = 0
@@ -53,6 +52,7 @@ for item in items:
     count_tokn += count_tokens(story)
     stories_items[str(item["id"])] = item
     stories_text += story
+
     if count_tokn > 4000:
         break
 

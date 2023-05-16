@@ -1,3 +1,5 @@
+# various helper functions for interacting with OpenAI, HN, cache, etc
+
 import requests
 import json
 import random
