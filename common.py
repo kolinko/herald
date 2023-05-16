@@ -24,7 +24,7 @@ def md5(s):
 def ai3(system, prompt):
     return ai(system, prompt, "gpt-3.5-turbo")
 
-def ai(system, prompt, model="gpt-4"):
+def ai(system, prompt, model="gpt-4", retry=True):
     cache_key = f'ai-cache:{model}:' + md5(system+'***'+prompt)
     if r.exists(cache_key):
         return r.get(cache_key).decode('utf-8')
@@ -36,12 +36,15 @@ def ai(system, prompt, model="gpt-4"):
 
     while True:
         try:
+
             completion = openai.ChatCompletion.create(model=model, messages=messages)
             result = completion.choices[0].message.content
             r.set(cache_key, result)
             return result
 
         except Exception as e:
+            if not retry:
+                raise e
             # Print the error message in red color
             print("\033[91m" + f"Error occurred: {str(e)}" + "\033[0m")
             time.sleep(1)

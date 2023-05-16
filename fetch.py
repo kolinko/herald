@@ -10,7 +10,7 @@ import requests
 import api_keys
 import json
 
-from common import ai, download_and_cache
+from common import ai, download_and_cache, count_tokens
 
 USE_SCRAPERAPI = True
 # scraperapi is extremely useful for going around websites protections for crawling
@@ -32,6 +32,9 @@ def fetch_article(url):
 
     text = fetch_text(url)
 
+    if count_tokens(text) > 3000:
+        return fetch_long_article(text)
+
     system_prompt = """
 You are a text-processor. You receive a webpage stripped from html tags, and your job is to reply with the following format:
 
@@ -48,9 +51,70 @@ Or, if the article is unreadable:
 Make sure that the article is transcribed in full - from first sentence to the last.
     """
 
-    result = ai(system_prompt, text)
+    try:
+        result = ai(system_prompt, text, retry=False)
+    except:
+        result = text
 
     return result #split_parts(result)
+
+def fetch_long_article(text):
+    system_prompt = """
+You are a text-processor. You receive a webpage stripped from html tags, and your job is to reply with the following format:
+
+===title
+(article title)
+===text-beginning
+(first two sentences of the article, verbatim)
+===text-ending
+(last two sentences of the article, verbatim)
+
+Or, if the article is unreadable:
+
+===error
+(reason, if given)
+
+Make sure that the article is transcribed in full - from first sentence to the last.
+    """
+
+    try:
+        result = ai(system_prompt, text, retry=False)
+        parts = split_parts(result)
+    except:
+        return text # give up, return plain html and hope for the best
+
+    if 'error' in parts:
+        return result
+
+    if 'title' not in parts or \
+        'text-beginning' not in parts or \
+        'text-ending' not in parts:
+        return text
+
+    beginning = parts['text-beginning']
+    ending = parts['text-ending']
+
+    while len(beginning) > 0:
+        if text.find(beginning)>=0:
+            text = text[text.find(beginning):]
+            break
+        else:
+            beginning = beginning[:-1]
+
+    while len(ending) > 0:
+        if text.rfind(ending)>=0:
+            text = text[:text.rfind(ending)+1]
+            break
+        else:
+            ending = ending[:-1]
+
+
+    return f"""===title
+{parts['title']}
+===text
+{text}
+"""
+
 
 def fetch_text(url):
     if USE_SCRAPERAPI:

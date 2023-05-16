@@ -8,6 +8,10 @@ from common import json_fetch, ai, ai3, download_and_cache
 from fetch import fetch_article
 
 import tqdm
+from jinja2 import Environment, FileSystemLoader
+
+env = Environment(loader=FileSystemLoader("templates/"))
+#template = environment.get_template("message.txt")
 
 ISSUE_DAY = 16
 ISSUE_MONTH = 5
@@ -75,84 +79,34 @@ marketer = {
     'bio':'''Chuck "The Huckster" Malone is a sleazy, yet dimwitted marketing expert who specializes in concocting outrageous and unbelievable gadgets that he believes will captivate the readers. Despite his ineptitude, Chuck's wild imagination and unwavering confidence in his ludicrous inventions make him an oddly entertaining presence in the office. His articles showcasing bizarre and impractical products never fail to amuse, leaving readers wondering if he's a genius or simply a master of the absurd.'''
 }
 
+#env = Environment(loader=FileSystemLoader("templates/"))
+
 def make_paper_fifth():
     with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
-    stories_html = ''
+    stories = paper['stories']
+    story_template = env.get_template("story.html")
 
-    HEAD = f'''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <link href="../style.css" rel="stylesheet">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{title}</title>
-</head>
-<body>
-
-    <table style="border:0px solid black" width=100%>
-    <tr>
-        <td><h1>{title}</h1></td>
-        <td width=20px valign=top style="padding-top:40px">{ISSUE_DATE}</td>
-    </tr>
-    </table>
-    '''
-
-    for story in paper['stories']:
-        story_html = HEAD + f'''
-  <article>
-    <h2>{story['title']}</h2>
-    <p><em>By {story['author']}</em></p>
-    <p><strong>Date:</strong> 23 Apr 2023</p>
-    <b><i>{story['full_story']['lead']}</b></i>
-    <p>{story['full_story']['text']}</p>
-  </article>
-</body>
-</html>'''
-
+    for story in stories:
+        story_html = story_template.render(story=story, title=story['title'], ISSUE_DATE=ISSUE_DATE)
         with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
             f.write(story_html)
 
-    for story in paper['stories']:
-        stories_html += f'''
-            <a href="{story['sources'][0]}.html">{story['title']}</a><br>
-            {story['full_story']['lead']}<br><br>
-        '''
-
     ads_html = '<h2>Ads</h2>'
-
     for ad in paper['ads']:
-        # we need to check for each field, sometimes gpt doesn't generate some of them
-
-        if 'name' in ad:
-            ads_html += f"<h4>{ad['name']}</h4>"
-        else:
-            continue # no name - no ad at all. shouldn't happen usually
-
+        if 'name' not in ad: continue
+        ads_html += "<h4>{}</h4>".format(ad['name'])
         if 'company' in ad:
-            ads_html += f"<h5>by {ad['company']}</h5>"
+            ads_html += "<h5>by {}</h5>".format(ad['company'])
         if 'description' in ad:
-            ads_html += f"{ad['description']}<br>"
+            ads_html += "{}<br>".format(ad['description'])
         if 'price' in ad:
-            ads_html += f"<b>price:</b>  {ad['price']}<br>"
+            ads_html += "<b>price:</b>  {}<br>".format(ad['price'])
         ads_html += "<br>"
 
-        
-    editors_note = paper['editors_note'].replace('\n', '<br>')
-
-    html = HEAD + f'''
-<h2>Editor's note</h2>
-{editors_note}
-<h2>Today's stories</h2>
-{stories_html}
-{ads_html}
-<h2>Editorial Team</h2>
-</body>
-</html>
-    '''
+    index_template = env.get_template("index.html")
+    html = index_template.render(title=title, ISSUE_DATE=ISSUE_DATE, editors_note=paper['editors_note'], stories=stories, ads_html=ads_html)
 
     with open(f'{ISSUE}/index.html', 'w') as f:
         f.write(html)
