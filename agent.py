@@ -9,11 +9,11 @@ from fetch import fetch_text, fetch_article
 
 import tqdm
 
-ISSUE_DAY = 11
+ISSUE_DAY = 16
 ISSUE_MONTH = 5
 ISSUE_YEAR = 2023
 
-ISSUE = f"{ISSUE_DAY}-{ISSUE_MONTH}-{ISSUE_YEAR}"
+ISSUE = f"{ISSUE_YEAR}-{ISSUE_MONTH:02d}-{ISSUE_DAY:02d}"
 ISSUE_FNAME = f"paper.{ISSUE}.json"
 
 month_names = {
@@ -307,7 +307,7 @@ def make_paper_third(stories_items):
     cursor_up_code = '\x1b[1A'
     clear_line_code = '\x1b[2K'
     while True:
-        print("\n".join([f"Story {k}: {v}" for k, v in status_dict.items()]))
+        print("\n".join([f"{k}: {v}" for k, v in status_dict.items()]))
         time.sleep(1)  # Delay between updates
         if all(value == 'Done' for value in status_dict.values()):  # If all tasks are done
             break

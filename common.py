@@ -36,8 +36,15 @@ def ai(system, prompt, model="gpt-4"):
         {"role": "system", "content": system},
         {"role": "user", "content": prompt}
     ]
-    completion = openai.ChatCompletion.create(model=model, messages=messages)
-    result = completion.choices[0].message.content
+
+    result = None
+    while result is None:
+        try:
+            completion = openai.ChatCompletion.create(model=model, messages=messages)
+            result = completion.choices[0].message.content
+        except:
+            print('Exception with AI, retrying')
+            time.sleep(1)
 
     r.set(cache_key, result)
     return result

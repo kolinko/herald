@@ -1,4 +1,3 @@
-from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
 import api_keys
@@ -63,9 +62,9 @@ def fetch_text(url):
     # break into lines and remove leading and trailing space on each
     lines = (line.strip() for line in text.splitlines())
 
-    # break multi-headlines into a line each
-    
+    # break multi-headlines into a line each    
     chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+
     # drop blank lines
     text = '\n'.join(chunk for chunk in chunks if chunk)
 
@@ -74,6 +73,8 @@ def fetch_text(url):
 
 def split_parts(s):
     # splits text returned by gpt via fetch_article into parts
+    # we use this formatting instead of JSON because GPT is more consistent
+    # in producing a well formatted output this way - no issues with json escaping
 
     lines = s.split('\n')
     section = ''
@@ -81,7 +82,6 @@ def split_parts(s):
     for l in lines:
         if l[:3] == '===':
             section = l[3:]
-#            print(section)
             res[section] = ''
         else:
             res[section] += l+'\n'

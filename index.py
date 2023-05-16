@@ -39,13 +39,9 @@ def elapsed():
     elapsed_time = (time.time() - start_time) * 1000 # Get the elapsed time in milliseconds
     print(f"Time elapsed: {elapsed_time:.2f} ms")
 
-with open('index.json', 'r') as f:
-    items = json.loads(f.read())
-
 print('Downloading new HN stories index...')
 item_ids = json.loads(download_and_cache('https://hacker-news.firebaseio.com/v0/newstories.json', key_prefix=ISSUE))
 
-#print('base item ids', item_ids)
 
 # Define the base URL for the Hacker News API
 API_BASE_URL = "https://hacker-news.firebaseio.com/v0"
@@ -100,8 +96,8 @@ print(pretty_time(oldest))
 print('Number of stories:',count)
 print('token_count', count_tokn)
 
-make_pro_story(stories_items)
-exit()
+#make_pro_story(stories_items)
+#exit()
 
 make_paper_first(stories_items)
 make_paper_second()
