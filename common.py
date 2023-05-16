@@ -87,3 +87,18 @@ def json_fetch(kind, id, cache_only=False):
             return None
 
     return json.loads(result)
+
+def pretty_time(ts):
+    dt = datetime.datetime.fromtimestamp(ts)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+# basic profiling functions
+start_time = time.time() 
+def reset():
+    global start_time
+    start_time = time.time() 
+
+def elapsed():
+    elapsed_time = (time.time() - start_time) * 1000 # Get the elapsed time in milliseconds
+    print(f"Time elapsed: {elapsed_time:.2f} ms")
+
