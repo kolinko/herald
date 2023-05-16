@@ -3,6 +3,7 @@ import json
 import random
 import hashlib
 import time
+import datetime
 
 import tiktoken
 encoding = tiktoken.get_encoding("cl100k_base") # gpt2 for gpt3, and cl100k_base for gpt3turbo

@@ -14,11 +14,6 @@ from agent import * #make_paper, make_paper_first, make_paper_second, make_paper
 print('Downloading new HN stories index...')
 item_ids = json.loads(download_and_cache('https://hacker-news.firebaseio.com/v0/newstories.json', key_prefix=ISSUE))
 
-# Define the base URL for the Hacker News API
-API_BASE_URL = "https://hacker-news.firebaseio.com/v0"
-
-# Define the endpoint for getting an item by ID
-API_ITEM_ENDPOINT = "item/{}.json?print=pretty"
 items = []
 
 count = 0
@@ -27,10 +22,6 @@ print('Downloading HN story details...')
 
 for item_id in tqdm.tqdm(item_ids):
     count += 1
-
-#    item_url = f"{API_BASE_URL}/{API_ITEM_ENDPOINT.format(item_id)}"
-#    print(f'downloading {item_id} [{count} of {len(item_ids)}]')
-#    item = download_and_cache(item_url)
     try:
         item = json_fetch('item', item_id)
     except:
@@ -45,34 +36,33 @@ for item_id in tqdm.tqdm(item_ids):
     else:
         items.append(item)
 
+# filter new stories
 count = 0
 count_tokn = 0
 stories_text = ''
 stories_items = {}
 for item in items:
-    if 'kids' in item and len(item['kids'])>2:
-#        print(json.dumps(item, indent=2))
-        count += 1
-        story = f'[{item["id"]}] {item["title"]}\n' # replace with id
-        item['ai_text'] = story
-        count_tokn += count_tokens(story)
-        stories_items[str(item["id"])] = item
-        stories_text += story
-        oldest = item['time']
+    # criteria for story exclusion:
+    if 'kids' not in item or len(item['kids'])<=2:
+        continue
+    # /criteria
 
-        if count_tokn > 4000:
-            break
+    count += 1
+    story = f'[{item["id"]}] {item["title"]}\n'
+    item['ai_text'] = story
+    count_tokn += count_tokens(story)
+    stories_items[str(item["id"])] = item
+    stories_text += story
+    if count_tokn > 4000:
+        break
 
-print(pretty_time(oldest))
-
+print('Oldest post:', pretty_time(items[-1]['time']))
 print('Number of stories:',count)
-print('token_count', count_tokn)
-
-#make_pro_story(stories_items)
-#exit()
+print('Token count:', count_tokn)
 
 make_paper_first(stories_items)
 make_paper_second()
+exit()
 make_paper_third(stories_items)
 make_paper_fourth()
 make_paper_fifth()
