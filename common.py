@@ -1,14 +1,7 @@
-
-import redis
 import requests
 import json
-
-
 import random
 import hashlib
-
-r = redis.Redis(host='localhost', port=6379, db=0)
-
 import time
 
 import tiktoken
@@ -19,6 +12,8 @@ from api_keys import organisation, api_key
 openai.organization = organisation
 openai.api_key = api_key
 
+import redis
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 def md5(s):
     return hashlib.md5(s.encode('utf-8')).hexdigest()
@@ -31,29 +26,26 @@ def ai(system, prompt, model="gpt-4"):
     if r.exists(cache_key):
         return r.get(cache_key).decode('utf-8')
 
-
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": prompt}
     ]
 
-    result = None
-    while result is None:
+    while True:
         try:
             completion = openai.ChatCompletion.create(model=model, messages=messages)
             result = completion.choices[0].message.content
-        except:
-            print('Exception with AI, retrying')
+            r.set(cache_key, result)
+            return result
+
+        except Exception as e:
+            # Print the error message in red color
+            print("\033[91m" + f"Error occurred: {str(e)}" + "\033[0m")
             time.sleep(1)
-
-    r.set(cache_key, result)
-    return result
-
 
 def count_tokens(s):
     input_ids = encoding.encode(s)
     return len(input_ids)
-
 
 def in_cache(url):
     return r.exists(url)
@@ -62,7 +54,6 @@ def download(url):
     response = requests.get(url)
     response.raise_for_status() # Check for any HTTP errors
     return response.content
-
 
 def download_and_cache(url, cache_only=False, key_prefix=''):
     # Check if the content is already cached
@@ -81,6 +72,7 @@ def download_and_cache(url, cache_only=False, key_prefix=''):
             content = response.content
             r.set(key_prefix+url, content)
             return content
+
         except Exception as e:
             # Print the error message in red color
             print("\033[91m" + f"Error occurred: {str(e)}" + "\033[0m")

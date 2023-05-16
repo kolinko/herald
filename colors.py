@@ -1,4 +1,3 @@
-
 # basic code for printing console colors.
 # usage:
 # print(C.red('hello ')+C.green('world'))
