@@ -13,7 +13,7 @@ from jinja2 import Environment, FileSystemLoader
 env = Environment(loader=FileSystemLoader("templates/"))
 #template = environment.get_template("message.txt")
 
-ISSUE_DAY = 16
+ISSUE_DAY = 18
 ISSUE_MONTH = 5
 ISSUE_YEAR = 2023
 
@@ -79,7 +79,37 @@ marketer = {
     'bio':'''Chuck "The Huckster" Malone is a sleazy, yet dimwitted marketing expert who specializes in concocting outrageous and unbelievable gadgets that he believes will captivate the readers. Despite his ineptitude, Chuck's wild imagination and unwavering confidence in his ludicrous inventions make him an oddly entertaining presence in the office. His articles showcasing bizarre and impractical products never fail to amuse, leaving readers wondering if he's a genius or simply a master of the absurd.'''
 }
 
-#env = Environment(loader=FileSystemLoader("templates/"))
+
+def harvey_request(journalist=None):
+    harvey_prompt = f'''
+I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
+
+The paper is titled "Hacker Herald", and it's based on Hacker News news.
+'''
+
+    if journalist is not None:
+        harvey_prompt += f'''
+You are:
+{journalist['name']}
+{journalist['bio']}
+
+Your editor in chief is:
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+'''
+    else:
+        harvey_prompt += f'''
+You are the editor in chief:
+{editor_in_chief['name']}
+{editor_in_chief['bio']}
+'''
+
+    harvey_prompt+= '''
+Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
+    '''
+
+    return harvey_prompt
+
 
 def make_paper_fifth():
     with open(ISSUE_FNAME, 'r') as f:
@@ -137,6 +167,7 @@ Your editor in chief is:
 
 Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
 
+    harvey_prompt = harvey_request(marketer) + '''
 Reply in a following json form:'''+'''
 [{'name':'first product name', 'company': 'fake company name', 'description': 'fake two-sentence description', 'price': 'price. doesn't have to be in actual money. can be stuff like "your soul"'}]
     '''
