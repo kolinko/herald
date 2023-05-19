@@ -11,7 +11,12 @@ import tiktoken
 encoding = tiktoken.get_encoding("cl100k_base") # gpt2 for gpt3, and cl100k_base for gpt3turbo
 
 import openai
-from api_keys import organisation, api_key
+try:
+    from api_keys import organisation, api_key
+except:
+    print("You need to setup api keys first.\nEdit api_keys.py.default.py, adding your API keys, and rename the file to api_keys.py")
+    exit()
+
 openai.organization = organisation
 openai.api_key = api_key
 

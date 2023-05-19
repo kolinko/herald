@@ -1,7 +1,5 @@
 import json
 
-import hashlib
-
 import time
 import tqdm
 
