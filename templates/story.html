@@ -5,12 +5,12 @@
   <link href="../style.css" rel="stylesheet">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title }}</title>
+  <title>HH -- {{story.title}}</title>
 </head>
 <body>
     <table style="border:0px solid black" width=100%>
     <tr>
-        <td><h1>{{ title }} -- {{story.title}}</h1></td>
+        <td><h1>Hacker Herald</h1></td>
         <td width=20px valign=top style="padding-top:40px">{{ ISSUE_DATE }}</td>
     </tr>
     </table>
@@ -20,7 +20,7 @@
     <p><em>By {{ story.author }}</em></p>
     <p><strong>Date:</strong> 23 Apr 2023</p>
     <b><i>{{ story.full_story.lead }}</b></i>
-    <p>{{ story.full_story.text }}</p>
+    <p>{{ story.full_story.text  | replace('\n', '<br>')}}</p>
   </article>
 </body>
 </html>

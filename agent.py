@@ -118,7 +118,7 @@ def make_paper_fifth():
     story_template = env.get_template("story.html")
 
     for story in stories:
-        story_html = story_template.render(story=story, title=story['title'], ISSUE_DATE=ISSUE_DATE)
+        story_html = story_template.render(story=story, title=story['title'], child_dir=None, ISSUE_DATE=ISSUE_DATE)
         with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
             f.write(story_html)
 
@@ -126,10 +126,22 @@ def make_paper_fifth():
     html = index_template.render(title=title, 
                                  ISSUE_DATE=ISSUE_DATE, 
                                  editors_note=paper['editors_note'], 
-                                 stories=stories, ads=paper['ads'])
+                                 stories=stories, ads=paper['ads'],
+                                 child_dir=None)
 
     with open(f'{ISSUE}/index.html', 'w') as f:
         f.write(html)
+
+    index_template = env.get_template("index.html")
+    html = index_template.render(title=title, 
+                                 ISSUE_DATE=ISSUE_DATE, 
+                                 editors_note=paper['editors_note'], 
+                                 stories=stories, ads=paper['ads'],
+                                 child_dir=f"{ISSUE}/")
+
+    with open(f'index.html', 'w') as f:
+        f.write(html)
+
 
 def make_paper_fourth():
     print('generating ads...')

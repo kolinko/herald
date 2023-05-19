@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <link href="../style.css" rel="stylesheet">
+  <link href="{% if not child_dir %}../{% endif %}style.css" rel="stylesheet">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }}</title>
@@ -19,10 +19,10 @@
 {{ editors_note | replace('\n', '<br>') }}
 <h2>Today's stories</h2>
 {% for story in stories %}
-    <a href="{{ story.sources[0] }}.html">{{ story.title }}</a><br>
-    {{ story.full_story.lead }}<br><a href="#">read more...</a><br><br>
-
+    <a href="{{child_dir}}{{ story.sources[0] }}.html">{{ story.title }}</a><br>
+    {{ story.full_story.lead }}<br><a href="{{child_dir}}{{ story.sources[0] }}.html">read more...</a><br><br>
 {% endfor %}
+
 <h2>Ads</h2>
 {% for ad in ads %}
     {% if 'name' in ad %}
