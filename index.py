@@ -16,12 +16,9 @@ item_ids = json.loads(download_and_cache('https://hacker-news.firebaseio.com/v0/
 
 items = []
 
-count = 0
-error_count = 0
 print('Downloading HN story details...')
 
 for item_id in tqdm.tqdm(item_ids):
-    count += 1
     try:
         item = json_fetch('item', item_id)
     except:
@@ -31,8 +28,10 @@ for item_id in tqdm.tqdm(item_ids):
         continue
 
     ignore_hosts = ['youtube.com', 'twitter.com']
-    if not any(host in item['url'] for host in ignore_hosts):
-        items.append(item)
+    if any(host in item['url'] for host in ignore_hosts):
+        continue
+
+    items.append(item)
 
 
 # filter new stories
@@ -58,8 +57,19 @@ print('Oldest post:', pretty_time(items[-1]['time']))
 print('Number of stories:',len(items))
 print('Token count:', count_tokn)
 
+# Paper generation below
+
+# prepare a list of article tites
 make_paper_first(stories_items)
+
+# prepare Editors' note
 make_paper_second()
+
+# write each article
 make_paper_third(stories_items)
+
+# add ads
 make_paper_fourth()
+
+# generate html
 make_paper_fifth()
