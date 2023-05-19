@@ -32,7 +32,9 @@ def fetch_article(url):
 
     text = fetch_text(url)
 
-    if count_tokens(text) > 3000:
+    print(count_tokens(text), url)
+
+    if count_tokens(text) > 2000:
         return fetch_long_article(text)
 
     system_prompt = """
@@ -51,8 +53,15 @@ Or, if the article is unreadable:
 Make sure that the article is transcribed in full - from first sentence to the last.
     """
 
+#    if 'apnews' in url:
+#        print(text)
+#        print()
+
     try:
+
         result = ai(system_prompt, text, retry=False)
+#        if 'apnews' in url:
+#            print('done!', url)
     except:
         result = text
 

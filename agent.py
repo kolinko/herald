@@ -81,6 +81,9 @@ marketer = {
 
 
 def harvey_request(journalist=None):
+    # this is so ugly! no idea how to put prompts into code in a nicer way. 
+    # Perhaps should use jinja2 for templating? But then we split parts of logic into two separate files
+
     harvey_prompt = f'''
 I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
 
@@ -93,18 +96,14 @@ You are:
 {journalist['name']}
 {journalist['bio']}
 
-Your editor in chief is:
-{editor_in_chief['name']}
-{editor_in_chief['bio']}
-'''
+Your editor in chief is:'''
     else:
-        harvey_prompt += f'''
-You are the editor in chief:
+        harvey_prompt += f'''You are the editor in chief:'''
+
+    harvey_prompt+= f'''
 {editor_in_chief['name']}
 {editor_in_chief['bio']}
-'''
 
-    harvey_prompt+= '''
 Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
     '''
 
@@ -123,20 +122,11 @@ def make_paper_fifth():
         with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
             f.write(story_html)
 
-    ads_html = '<h2>Ads</h2>'
-    for ad in paper['ads']:
-        if 'name' not in ad: continue
-        ads_html += "<h4>{}</h4>".format(ad['name'])
-        if 'company' in ad:
-            ads_html += "<h5>by {}</h5>".format(ad['company'])
-        if 'description' in ad:
-            ads_html += "{}<br>".format(ad['description'])
-        if 'price' in ad:
-            ads_html += "<b>price:</b>  {}<br>".format(ad['price'])
-        ads_html += "<br>"
-
     index_template = env.get_template("index.html")
-    html = index_template.render(title=title, ISSUE_DATE=ISSUE_DATE, editors_note=paper['editors_note'], stories=stories, ads_html=ads_html)
+    html = index_template.render(title=title, 
+                                 ISSUE_DATE=ISSUE_DATE, 
+                                 editors_note=paper['editors_note'], 
+                                 stories=stories, ads=paper['ads'])
 
     with open(f'{ISSUE}/index.html', 'w') as f:
         f.write(html)
@@ -152,23 +142,8 @@ def make_paper_fourth():
     for story in paper['stories']:
         stories += '- '+ story['title'] + '\n'
 
-    harvey_prompt = f'''
-I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
-
-The paper is titled "Hacker Herald", and it's based on Hacker News news.
-
-You are:
-{marketer['name']}
-{marketer['bio']}
-
-Your editor in chief is:
-{editor_in_chief['name']}
-{editor_in_chief['bio']}
-
-Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
-
     harvey_prompt = harvey_request(marketer) + '''
-Reply in a following json form:'''+'''
+Reply in a following json form:
 [{'name':'first product name', 'company': 'fake company name', 'description': 'fake two-sentence description', 'price': 'price. doesn't have to be in actual money. can be stuff like "your soul"'}]
     '''
 
@@ -199,27 +174,14 @@ def make_full_story(story):
 #        print(json.dumps(source))
 
     story['source_url'] = source['url']
-    status_dict[short_name] = f"fetching: {source['url'][:50]} ..."
+    status_dict[short_name] = "fetching"
+    print(f"[{short_name}] fetching {source['url']} \n")
     source_text = fetch_article(source['url']) # can fail if source url doesn't exist. should try other sources then
 
     if '==error' in source_text:
         print(source_text)
 
-    harvey_prompt = f'''
-I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
-
-The paper is titled "Hacker Herald", and it's based on Hacker News news.
-
-You are:
-{name}
-{bio}
-
-Your editor in chief is:
-{editor_in_chief['name']}
-{editor_in_chief['bio']}
-
-Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
-
+    harvey_prompt = harvey_request({'name': name, 'bio': bio}) + '''
 Reply in a following form:
 ===title
 (title here)
@@ -246,7 +208,7 @@ Original:
     count=''
 
     while result is None:
-        status_dict[short_name] = "writing article..."
+        status_dict[short_name] = "writing"#"writing article..."
         reply = ai(harvey_prompt, user_prompt + count)
 
         required_sections = 'title', 'lead', 'text'
@@ -285,12 +247,12 @@ def make_paper_third(stories_items):
     cursor_up_code = '\x1b[1A'
     clear_line_code = '\x1b[2K'
     while True:
-        print("\n".join([f"{k}: {v}" for k, v in status_dict.items()]))
+        print("\t".join([f"{k}: {v}" for k, v in status_dict.items()]))
         time.sleep(1)  # Delay between updates
         if all(value == 'Done' for value in status_dict.values()):  # If all tasks are done
             break
 
-        print((cursor_up_code + clear_line_code) * len(status_dict), end='\r')
+        print(cursor_up_code + cursor_up_code + clear_line_code)#(cursor_up_code + clear_line_code) * len(status_dict), end='\r')
 
 
     for t in threads:
@@ -301,7 +263,7 @@ def make_paper_third(stories_items):
 
 
 def make_paper_second():
-    print("writing editors' note")
+    print("Writing editors' note...")
     with open(ISSUE_FNAME, 'r') as f:
         paper = json.loads(f.read())
 
@@ -309,25 +271,11 @@ def make_paper_second():
     for story in paper:
         stories += '- ' + story['title'] + '\n'
 
-    harvey_prompt = f'''
-I'm writing a parody story about an editorial office of a tabloid paper covering tech news. 
+    harvey_prompt = harvey_request()
 
-The paper is titled "Hacker Herald", and it's based on Hacker News news.
-
-You are:
-{editor_in_chief['name']}
-{editor_in_chief['bio']}
-
-
-Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
-'''
-    user_prompt = f'''
-Your journalists delivered these stories for the day:
-
-{stories}
-
-Write a brief, two-paragraph editor's note that will fit the front page. The words of wisdom that will encourage your readers to read the rest :)
-'''
+    user_prompt = "Your journalists delivered these stories for the day:\n\n"+\
+                  stories+'\n\n'+\
+                  "Write a brief, two-paragraph editor's note that will fit the front page. The words of wisdom that will encourage your readers to read the rest :)"
 
     note = ai(harvey_prompt, user_prompt)
 
@@ -338,7 +286,6 @@ Write a brief, two-paragraph editor's note that will fit the front page. The wor
 
     with open(ISSUE_FNAME, 'w') as f:
         f.write(json.dumps(paper, indent=2))
-
 
 
 def make_paper_first(stories):
@@ -386,23 +333,10 @@ def make_paper_first(stories):
 def choose_stories(your_name, your_bio, others, stories):
     print(f'Asking {your_name}...')
 
-    harvey_prompt = f'''
-I'm writing a parody story about an editorial office of a tabloid paper covering tech news, titled "Hacker Herald" 
-
-Two characters in the story:
-
-{editor_in_chief['name']}
-{editor_in_chief['bio']}
-
-You are:
-{your_name}
-{your_bio}
-
-Remember that this is a comedy/parody, so make everything factual, but hilariously over-tabloidy. Think comic-book narrative.
-
+    harvey_prompt = harvey_request({'name':your_name, 'bio':your_bio}) + '''
 If you get asked to write a story, choose one theme, don't merge various themes.
 
-Reformat the reply to be in json:'''+'''
+Reformat the reply to be in json:
 [{"why":(five words why this story fits your speciality), "title":..., "sources":[source_ids],"title":...},...]
 
 Three titles max, three sources max per title.
