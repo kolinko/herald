@@ -10,7 +10,7 @@
 <body>
     <table style="border:0px solid black" width=100%>
     <tr>
-        <td><h1>Hacker Herald</h1></td>
+        <td><a style="color:#000000" href="index.html"><h1>Hacker Herald</h1></a></td>
         <td width=20px valign=top style="padding-top:40px">{{ ISSUE_DATE }}</td>
     </tr>
     </table>
@@ -21,6 +21,10 @@
     <p><strong>Date:</strong> 23 Apr 2023</p>
     <b><i>{{ story.full_story.lead }}</b></i>
     <p>{{ story.full_story.text  | replace('\n', '<br>')}}</p>
+    <p>Source: <a href="{{source.url}}">{{source.title}}</a></p>
+    <p>Discussion: <a href="https://news.ycombinator.com/item?id={{source.id}}">Hacker News</a></p>
+    <p></p>
+    <p><a href="index.html">back to the front page</a></p>
   </article>
 </body>
 </html>

@@ -118,7 +118,11 @@ def make_paper_fifth():
     story_template = env.get_template("story.html")
 
     for story in stories:
-        story_html = story_template.render(story=story, title=story['title'], child_dir=None, ISSUE_DATE=ISSUE_DATE)
+        source_id = story['sources'][0]
+        source = json_fetch('item', source_id)
+
+
+        story_html = story_template.render(story=story, title=story['title'], source=source, child_dir=None, ISSUE_DATE=ISSUE_DATE)
         with open(f"{ISSUE}/{story['sources'][0]}.html", 'w') as f:
             f.write(story_html)
 
