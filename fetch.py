@@ -12,11 +12,6 @@ import json
 
 from common import ai, download_and_cache, count_tokens
 
-USE_SCRAPERAPI = True
-# scraperapi is extremely useful for going around websites protections for crawling
-# if you switch to False, the websites will be downloaded directly, but in many situations
-# it will result in no article contents fetched
-
 def fetch_article(url):
     # Returns an article from a given URL that is stripped of all tags and split into title and text
     # The output can be easily parsed into a list by using split_parts defined below
@@ -33,7 +28,7 @@ def fetch_article(url):
     text = fetch_text(url)
 
     assert count_tokens(text) < 7000 # todo: for longer articles, chunk them and summarise, so that we can provide them as prompt later on
-    
+
 
     if count_tokens(text) > 2000: # ideally it should be > 5000, but as of 19 May 2023, 
                                   # OpenAI keeps lagging with longer prompts
@@ -128,7 +123,7 @@ Make sure that the article is transcribed in full - from first sentence to the l
 
 
 def fetch_text(url):
-    if USE_SCRAPERAPI:
+    if api_keys.scrape_key is not None:
         url = f"http://api.scraperapi.com?api_key={api_keys.scrape_key}&url={url}"
 
     html = download_and_cache(url)
