@@ -7,7 +7,7 @@ import datetime
 
 from common import count_tokens, download, download_and_cache, pretty_time, json_fetch
 
-from agent import * #make_paper, make_paper_first, make_paper_second, make_paper_third, ISSUE
+from agent import make_paper_first, make_paper_second, make_paper_third, make_paper_fourth, make_paper_fifth
 
 import paper
 
