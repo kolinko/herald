@@ -32,9 +32,11 @@ def fetch_article(url):
 
     text = fetch_text(url)
 
-    print(count_tokens(text), url)
+    assert count_tokens(text) < 7000 # todo: for longer articles, chunk them and summarise, so that we can provide them as prompt later on
+    
 
-    if count_tokens(text) > 2000:
+    if count_tokens(text) > 2000: # ideally it should be > 5000, but as of 19 May 2023, 
+                                  # OpenAI keeps lagging with longer prompts
         return fetch_long_article(text)
 
     system_prompt = """

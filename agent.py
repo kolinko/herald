@@ -47,6 +47,7 @@ Remember that this is a comedy/parody, so make everything factual, but hilarious
 
 
 def make_paper_fifth():
+    print('Generating html...')
     with open(paper.issue_fname, 'r') as f:
         paper_out = json.loads(f.read())
 
@@ -72,6 +73,9 @@ def make_paper_fifth():
     with open(f'{paper.issue}/index.html', 'w') as f:
         f.write(html)
 
+    print('Done!\n\nTo see full paper')
+    print(f'open {paper.issue}/index.html')
+
     index_template = env.get_template("index.html")
     html = index_template.render(title=paper.title, 
                                  issue_date=paper.issue_date, 
@@ -83,8 +87,9 @@ def make_paper_fifth():
         f.write(html)
 
 
+
 def make_paper_fourth():
-    print('generating ads...')
+    print('Inventing ads...')
 
     with open(paper.issue_fname, 'r') as f:
         paper_out = json.loads(f.read())
@@ -160,7 +165,7 @@ Original:
     count=''
 
     while result is None:
-        status_dict[short_name] = "writing"#"writing article..."
+        status_dict[short_name] = "writing"
         reply = ai(harvey_prompt, user_prompt + count)
 
         required_sections = 'title', 'lead', 'text'
@@ -189,6 +194,8 @@ def make_paper_third(stories_items):
     with open(paper.issue_fname, 'r') as f:
         paper_out = json.loads(f.read())
 
+    print('Writing full stories...\n')
+
     threads = []
     for story in paper_out['stories']:
         t = threading.Thread(target=get_full_story, args=(story,))
@@ -201,10 +208,13 @@ def make_paper_third(stories_items):
     while True:
         print("\t".join([f"{k}: {v}" for k, v in status_dict.items()]))
         time.sleep(1)  # Delay between updates
+
         if all(value == 'Done' for value in status_dict.values()):  # If all tasks are done
             break
 
         print(cursor_up_code + cursor_up_code + clear_line_code)#(cursor_up_code + clear_line_code) * len(status_dict), end='\r')
+
+    print('All done.\n')
 
 
     for t in threads:
