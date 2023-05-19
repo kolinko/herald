@@ -122,9 +122,11 @@ Chuck! We're ready to publish the current issue, but we need some bullshit produ
 
 
 def make_full_story(story):
-    short_name = paper.short_names[story['author']]
+    short_name = paper.journalist_by_name(story['author'])['short']
     name = story['author']
-    bio = paper.journalists[name]
+    bio = paper.journalist_by_name(name)['bio']
+
+    status_dict[short_name] = 'working...'
 
     source_id = str(story['sources'][0])
     source = json_fetch('item', source_id)
@@ -178,6 +180,7 @@ Original:
         result['lead'] = reply[reply.find('===lead')+len('===lead '):reply.find('===text')]
         result['text'] = reply[reply.find('===text')+len('===text '):]
 
+    status_dict[short_name] = 'Done'
     return result
 
 import threading
@@ -185,9 +188,7 @@ status_dict = {}
 import time
 
 def get_full_story(story):
-    status_dict[paper.short_names[story['author']]] = 'working...'
     story['full_story'] = make_full_story(story)
-    status_dict[paper.short_names[story['author']]] = 'Done'
     return story
 
 def make_paper_third(stories_items):
@@ -258,8 +259,9 @@ def make_paper_first(stories):
     paper_out = []
     used_up = []
 
-    for your_name in tqdm.tqdm(paper.journalists):
-        your_bio = paper.journalists[your_name]
+    for journalist in tqdm.tqdm(paper.journalists):
+        your_name = journalist['name']
+        your_bio = journalist['bio']
 
         stories_text = ''
         for story_id in stories:
