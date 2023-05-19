@@ -11,8 +11,10 @@ from common import count_tokens, download, download_and_cache, pretty_time, json
 
 from agent import * #make_paper, make_paper_first, make_paper_second, make_paper_third, ISSUE
 
+import paper
+
 print('Downloading new HN stories index...')
-item_ids = json.loads(download_and_cache('https://hacker-news.firebaseio.com/v0/newstories.json', key_prefix=ISSUE))
+item_ids = json.loads(download_and_cache('https://hacker-news.firebaseio.com/v0/newstories.json', key_prefix=paper.issue))
 
 items = []
 
