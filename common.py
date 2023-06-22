@@ -33,16 +33,16 @@ except redis.exceptions.ConnectionError as ex:
 def md5(s):
     return hashlib.md5(s.encode('utf-8')).hexdigest()
 
-def ai16k(system, prompt):
-    return ai(system, prompt, "gpt-3.5-turbo-16k")
+def ai16k(system, prompt, retry=True, cache=True):
+    return ai(system, prompt, "gpt-3.5-turbo-16k", retry=retry, cache=cache)
 
 
-def ai3(system, prompt):
-    return ai(system, prompt, "gpt-3.5-turbo")
+def ai3(system, prompt, retry=True, cache=True):
+    return ai(system, prompt, "gpt-3.5-turbo", retry=retry, cache=cache)
 
-def ai(system, prompt, model="gpt-4", retry=True):
+def ai(system, prompt, model="gpt-4", retry=True, cache=True):
     cache_key = f'ai-cache:{model}:' + md5(system+'***'+prompt)
-    if r.exists(cache_key):
+    if cache and r.exists(cache_key):
         return r.get(cache_key).decode('utf-8')
 
     messages = [
