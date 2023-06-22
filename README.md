@@ -28,16 +28,10 @@ If for some reason you can't or don't want to use Redis, you can remove the refe
 
 ### Step 3: Install Python Requirements
 
-Here are the Python requirements that need to be installed:
-
-- `redis`
-- `openai`
-- `tqdm`
-
-You can install them by running the following command:
+Install python requirements
 
 ```bash
-pip install redis openai tqdm
+pip install redis openai tqdm tiktoken requests bs4 jinja2
 ```
 
 There might be other required packages as well. If you encounter any issues, don't hesitate to ask ChatGPT for help.
