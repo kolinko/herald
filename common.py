@@ -23,6 +23,13 @@ openai.api_key = api_key
 import redis
 r = redis.Redis(host='localhost', port=6379, db=0)
 
+try:
+    r.ping()
+except redis.exceptions.ConnectionError as ex:
+    print("Redis server not enabled. Error: ", str(ex))
+    print("Please install or start Redis server.")
+    exit()
+
 def md5(s):
     return hashlib.md5(s.encode('utf-8')).hexdigest()
 
