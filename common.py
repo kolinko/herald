@@ -33,6 +33,10 @@ except redis.exceptions.ConnectionError as ex:
 def md5(s):
     return hashlib.md5(s.encode('utf-8')).hexdigest()
 
+def ai16k(system, prompt):
+    return ai(system, prompt, "gpt-3.5-turbo-16k")
+
+
 def ai3(system, prompt):
     return ai(system, prompt, "gpt-3.5-turbo")
 

@@ -10,7 +10,7 @@ import requests
 import api_keys
 import json
 
-from common import ai, download_and_cache, count_tokens
+from common import ai, download_and_cache, count_tokens, ai16k
 
 def fetch_article(url):
     # Returns an article from a given URL that is stripped of all tags and split into title and text
@@ -27,12 +27,26 @@ def fetch_article(url):
 
     text = fetch_text(url)
 
-    assert count_tokens(text) < 7000 # todo: for longer articles, chunk them and summarise, so that we can provide them as prompt later on
+    if count_tokens(text) > 14000: # todo: for longer articles, chunk them and summarise, so that we can provide them as prompt later on
+        print('article too long!', url)
+        print(count_tokens(text))
+        exit()
 
-
-    if count_tokens(text) > 2000: # ideally it should be > 5000, but as of 19 May 2023, 
+    if count_tokens(text) > 4000: # ideally it should be > 5000, but as of 19 May 2023, 
                                   # OpenAI keeps lagging with longer prompts
-        return fetch_long_article(text)
+        res = split_parts(fetch_long_article(text))
+        if 'text' not in res:
+            return ai16k('Summarise this text to fit into 4000 tokens', str(res))
+
+        if count_tokens(res['text']) > 4000:
+            res['text'] = ai16k('Summarise this article to fit into 4000 tokens', res['text'])
+            return f"""===title
+{res['title']}
+===text
+{res['text']}
+"""
+
+
 
     system_prompt = """
 You are a text-processor. You receive a webpage stripped from html tags, and your job is to reply with the following format:
@@ -50,17 +64,12 @@ Or, if the article is unreadable:
 Make sure that the article is transcribed in full - from first sentence to the last.
     """
 
-#    if 'apnews' in url:
-#        print(text)
-#        print()
-
     try:
-
         result = ai(system_prompt, text, retry=False)
-#        if 'apnews' in url:
-#            print('done!', url)
     except:
         result = text
+
+
 
     return result #split_parts(result)
 
@@ -84,7 +93,7 @@ Make sure that the article is transcribed in full - from first sentence to the l
     """
 
     try:
-        result = ai(system_prompt, text, retry=False)
+        result = ai16k(system_prompt, text, retry=False)
         parts = split_parts(result)
     except:
         return text # give up, return plain html and hope for the best
