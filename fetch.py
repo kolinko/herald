@@ -5,6 +5,8 @@
 # fetch_article(url) - fetch_text + clean it up using GPT
 #
 
+from newspaper import Article
+
 from bs4 import BeautifulSoup
 import requests
 import api_keys
@@ -13,122 +15,42 @@ import json
 from common import ai, download_and_cache, count_tokens, ai16k
 
 def fetch_article(url):
-    # Returns an article from a given URL that is stripped of all tags and split into title and text
-    # The output can be easily parsed into a list by using split_parts defined below
+    if api_keys.scrape_key is not None:
+        url = f"http://api.scraperapi.com?api_key={api_keys.scrape_key}&url={url}"
 
-    # Using gpt-4 here:
-    # - gpt-3 tended to ommit and rewrite parts of the article
-    # - gpt-4's context length is longer, so this will break on fewer articles
-    #
-    # Using this format instead of json, because it's hard to wrangle gpt-4 into producing a valid json in this case
-    # (due to it not escaping quotes properly, and newlines either)
-    #
-    # Error should be produced if website contains no decent article - e.g. only a message that javascript is disabled etc
-
-    text = fetch_text(url)
-
-    if count_tokens(text) > 14000: # todo: for longer articles, chunk them and summarise, so that we can provide them as prompt later on
-        print('article too long!', url)
-        print(count_tokens(text))
-        exit()
-
-    if count_tokens(text) > 4000: # ideally it should be > 5000, but as of 19 May 2023, 
-                                  # OpenAI keeps lagging with longer prompts
-        res = split_parts(fetch_long_article(text))
-        if 'text' not in res:
-            return ai16k('Summarise this text to fit into 4000 tokens', str(res))
-
-        if count_tokens(res['text']) > 4000:
-            res['text'] = ai16k('Summarise this article to fit into 4000 tokens', res['text'])
-            return f"""===title
-{res['title']}
-===text
-{res['text']}
-"""
-
-
-
-    system_prompt = """
-You are a text-processor. You receive a webpage stripped from html tags, and your job is to reply with the following format:
-
-===title
-(article title)
-===text
-(full article text)
-
-Or, if the article is unreadable:
-
-===error
-(reason, if given)
-
-Make sure that the article is transcribed in full - from first sentence to the last.
-    """
-
+    article = Article(url)
+    article.download()
     try:
-        result = ai(system_prompt, text, retry=False)
-    except:
-        result = text
-
-
-
-    return result #split_parts(result)
-
-def fetch_long_article(text):
-    system_prompt = """
-You are a text-processor. You receive a webpage stripped from html tags, and your job is to reply with the following format:
-
+        article.parse()
+        if count_tokens(article.text) < 5000:
+            return f'''
 ===title
-(article title)
-===text-beginning
-(first two sentences of the article, verbatim)
-===text-ending
-(last two sentences of the article, verbatim)
-
-Or, if the article is unreadable:
-
-===error
-(reason, if given)
-
-Make sure that the article is transcribed in full - from first sentence to the last.
-    """
-
-    try:
-        result = ai16k(system_prompt, text, retry=False)
-        parts = split_parts(result)
-    except:
-        return text # give up, return plain html and hope for the best
-
-    if 'error' in parts:
-        return result
-
-    if 'title' not in parts or \
-        'text-beginning' not in parts or \
-        'text-ending' not in parts:
-        return text
-
-    beginning = parts['text-beginning']
-    ending = parts['text-ending']
-
-    while len(beginning) > 0:
-        if text.find(beginning)>=0:
-            text = text[text.find(beginning):]
-            break
-        else:
-            beginning = beginning[:-1]
-
-    while len(ending) > 0:
-        if text.rfind(ending)>=0:
-            text = text[:text.rfind(ending)+1]
-            break
-        else:
-            ending = ending[:-1]
-
-
-    return f"""===title
-{parts['title']}
+{article.title}
 ===text
-{text}
-"""
+{article.text}
+            '''
+        elif count_tokens(article.text) < 12000:
+            ai16k('Summarise this article into five paragraphs', article.title)
+        else:
+            new_text = article.text
+            out_text = ''
+            while len(new_text)>0:
+
+                clipped = ''
+                while count_tokens(clipped) < 10000 and len(new_text)>0:
+                    clipped += new_text[:10]
+                    new_text = new_text[10:]
+                out_text += ai16k('Summarise this into three paragraphs', clipped) + '\n\n'
+
+            return f'''
+===title
+{article.title}
+===text
+{article.text}
+'''
+
+    except:
+        return article.html
 
 
 def fetch_text(url):
