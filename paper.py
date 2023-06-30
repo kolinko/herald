@@ -1,7 +1,7 @@
 import os
 
 
-ISSUE_DAY = 22
+ISSUE_DAY = 30
 ISSUE_MONTH = 6
 ISSUE_YEAR = 2023
 
