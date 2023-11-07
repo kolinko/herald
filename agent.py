@@ -197,6 +197,14 @@ def make_paper_third(stories_items):
 
     print('Writing full stories...\n')
 
+    for story in paper_out['stories']:
+        print('writing story')
+        get_full_story(story)
+
+
+
+    '''
+    multi threading
     threads = []
     for story in paper_out['stories']:
         t = threading.Thread(target=get_full_story, args=(story,))
@@ -214,12 +222,13 @@ def make_paper_third(stories_items):
             break
 
         print(cursor_up_code + cursor_up_code + clear_line_code)#(cursor_up_code + clear_line_code) * len(status_dict), end='\r')
+    '''
 
     print('All done.\n')
 
 
-    for t in threads:
-        t.join()
+#    for t in threads:
+#        t.join()
 
     with open(paper.issue_fname, 'w') as f:
         f.write(json.dumps(paper_out, indent=2))
@@ -301,9 +310,9 @@ def choose_stories(your_name, your_bio, others, stories):
 If you get asked to write a story, choose one theme, don't merge various themes.
 
 Reformat the reply to be in json:
-[{"why":(five words why this story fits your speciality), "title":..., "sources":[source_ids],"title":...},...]
+{'stories':[{"why":(five words why this story fits your speciality), "title":..., "sources":[source_ids],"title":...},{"why":...}]}
 
-Three titles max, three sources max per title.
+Three titles max, three sources max per title. 
 '''
 
     user_prompt = "Harvey, leaning on your desk with an intense expression, demands, " +\
@@ -313,8 +322,10 @@ Three titles max, three sources max per title.
                      stories
 
     while True:
-        out_txt = ai(harvey_prompt, user_prompt)
-        try:
-            return json.loads(out_txt)
-        except:
-            print(f"{out_txt}\nBad json? Retrying...")
+        out_txt = ai(harvey_prompt, user_prompt, json=True)
+        print(out_txt)
+        return json.loads(out_txt)['stories']
+#        try:
+#            return json.loads(out_txt)
+#        except:
+#            print(f"{out_txt}\nBad json? Retrying...")

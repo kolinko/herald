@@ -10,15 +10,18 @@ import datetime
 import tiktoken
 encoding = tiktoken.get_encoding("cl100k_base") # gpt2 for gpt3, and cl100k_base for gpt3turbo
 
-import openai
+from openai import OpenAI
 try:
     from api_keys import organisation, api_key
 except:
     print("You need to setup api keys first.\nEdit api_keys.py.default.py, adding your API keys, and rename the file to api_keys.py")
     exit()
 
-openai.organization = organisation
-openai.api_key = api_key
+openai = OpenAI(organization=organisation, api_key=api_key  )
+
+
+#openai.organization = organisation
+#openai.api_key = api_key
 
 import redis
 r = redis.Redis(host='localhost', port=6379, db=0)
@@ -40,7 +43,7 @@ def ai16k(system, prompt, retry=True, cache=True):
 def ai3(system, prompt, retry=True, cache=True):
     return ai(system, prompt, "gpt-3.5-turbo", retry=retry, cache=cache)
 
-def ai(system, prompt, model="gpt-4", retry=True, cache=True):
+def ai(system, prompt, json=False, model="gpt-4-1106-preview", retry=True, cache=True):
     cache_key = f'ai-cache:{model}:' + md5(system+'***'+prompt)
     if cache and r.exists(cache_key):
         return r.get(cache_key).decode('utf-8')
@@ -52,7 +55,7 @@ def ai(system, prompt, model="gpt-4", retry=True, cache=True):
 
     while True:
         try:
-            completion = openai.ChatCompletion.create(model=model, messages=messages)
+            completion = openai.chat.completions.create(model=model, messages=messages, response_format={'type':'json_object' if json else 'text'})
             result = completion.choices[0].message.content
             r.set(cache_key, result)
             return result

@@ -14,44 +14,33 @@ import json
 
 from common import ai, download_and_cache, count_tokens, ai16k
 
-def fetch_article(url):
+# tests
+# https://github.com/aeon-toolkit/aeon - not a regular article
+#  https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0291668  - timeouts with Article(url), but not with regular get
+
+def fetch_article(main_url):
     if api_keys.scrape_key is not None:
-        url = f"http://api.scraperapi.com?api_key={api_keys.scrape_key}&url={url}"
+        url = f"http://api.scraperapi.com?api_key={api_keys.scrape_key}&url={main_url}"
 
-    article = Article(url)
-    article.download()
     try:
-        article.parse()
-        if count_tokens(article.text) < 5000:
-            return f'''
-===title
-{article.title}
-===text
-{article.text}
-            '''
-        elif count_tokens(article.text) < 12000:
-            ai16k('Summarise this article into five paragraphs', article.title)
+        article = Article(url)
+        try:
+            article.download()
+            article.parse()
+        except:
+            article = None
+        if article is None or count_tokens(article.text)<100:
+            txt = fetch_text(main_url)
+            out = ai("Summarise this article into five paragraphs. Output in a json format: {'title':'(title)', 'text':'(summary)'}", txt, json=True)
+            return out
+        elif count_tokens(article.text) < 5000:
+            return {'title': article.title, 'text': article.text}
         else:
-            new_text = article.text
-            out_text = ''
-            while len(new_text)>0:
-
-                clipped = ''
-                while count_tokens(clipped) < 10000 and len(new_text)>0:
-                    clipped += new_text[:10]
-                    new_text = new_text[10:]
-                out_text += ai16k('Summarise this into three paragraphs', clipped) + '\n\n'
-
-            return f'''
-===title
-{article.title}
-===text
-{article.text}
-'''
-
-    except:
-        return article.html
-
+            out = ai("Summarise this article into five paragraphs. Output in a json format: {'title':'(title)', 'text':'(summary)'}", article.text, json=True)
+            return out
+    except Exception as e:
+        print(f'An error occurred: {e}')
+        return {'title': 'error', 'text': f'An error occurred while loading the article: {e}'}
 
 def fetch_text(url):
     if api_keys.scrape_key is not None:
@@ -77,21 +66,3 @@ def fetch_text(url):
     text = '\n'.join(chunk for chunk in chunks if chunk)
 
     return text
-
-
-def split_parts(s):
-    # splits text returned by gpt via fetch_article into parts
-    # we use this formatting instead of JSON because GPT is more consistent
-    # in producing a well formatted output this way - no issues with json escaping
-
-    lines = s.split('\n')
-    section = ''
-    res = {'':''}
-    for l in lines:
-        if l[:3] == '===':
-            section = l[3:]
-            res[section] = ''
-        else:
-            res[section] += l+'\n'
-
-    return res
