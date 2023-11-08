@@ -216,9 +216,33 @@ def make_paper_third(stories_items):
         get_full_story(story)
 
 
+
+    '''
+    multi threading
+    threads = []
+    for story in paper_out['stories']:
+        t = threading.Thread(target=get_full_story, args=(story,))
+        t.start()
+        threads.append(t)
+
+    time.sleep(1)
+    cursor_up_code = '\x1b[1A'
+    clear_line_code = '\x1b[2K'
+    while True:
+        print("\t".join([f"{k}: {v}" for k, v in status_dict.items()]))
+        time.sleep(1)  # Delay between updates
+
+        if all(value == 'Done' for value in status_dict.values()):  # If all tasks are done
+            break
+
+        print(cursor_up_code + cursor_up_code + clear_line_code)#(cursor_up_code + clear_line_code) * len(status_dict), end='\r')
+    '''
+
     print('All done.\n')
 
 
+#    for t in threads:
+#        t.join()
 
     with open(paper.issue_fname, 'w') as f:
         f.write(json.dumps(paper_out, indent=2))
