@@ -136,8 +136,9 @@ def make_full_story(story):
     status_dict[short_name] = "fetching"
     print(f"[{short_name}] fetching {source['url']} \n")
     source_text = fetch_article(source['url']) # can fail if source url doesn't exist. should try other sources then
+    source_text = json.loads(source_text)
 
-    if '==error' in source_text:
+    if 'title' not in source_text or source_text['title'] == 'error':
         print(source_text)
 
     harvey_prompt = harvey_request({'name': name, 'bio': bio}) + '''
@@ -147,7 +148,17 @@ Reply in a following form:
 ===lead
 (1-paragraph lead that will go ona  front page)
 ===text
-(4 paragraphs of article text)'''
+(4 paragraphs of article text)
+
+RULES:
+1. If you are asked to rewrite a source article, but the source is unavailable (e.g. website says you're not allowed to read it as a bot), in article text, complain hilariously about that website not being accessible, and somehow tie it to the main story, which you can then make up based on a title alone. (and say that you're making stuff up). ONLY DO IT IF THE ARTICLE IS UNREADABLE.
+
+2. Keep the language simple and easy to read and follow.
+
+3. Add <b></b> in certain sentences to make them easier to read.
+
+4. DO NOT make up stuff. Stick to what you can read in the article.
+'''
 
     user_prompt = f'''
 Harvey walks into your office. He says:
@@ -157,10 +168,10 @@ Our title:
 {story['title']}
 
 Original:
-{source_text}
+{source_text['text']}
 
-* If the source is unreadable (e.g. website says you're not allowed to read it as a bot), in article text, complain hilariously about that website not being accessible, and somehow tie it to the main story, which you can then make up based on a title alone. (and say that you're making stuff up).
 '''
+
 
 
     result = None
@@ -179,6 +190,9 @@ Original:
         result['title'] = reply[len('===title '):reply.find('===lead')]
         result['lead'] = reply[reply.find('===lead')+len('===lead '):reply.find('===text')]
         result['text'] = reply[reply.find('===text')+len('===text '):]
+
+    result['prompt'] = user_prompt
+
 
     status_dict[short_name] = 'Done'
     return result
@@ -202,33 +216,9 @@ def make_paper_third(stories_items):
         get_full_story(story)
 
 
-
-    '''
-    multi threading
-    threads = []
-    for story in paper_out['stories']:
-        t = threading.Thread(target=get_full_story, args=(story,))
-        t.start()
-        threads.append(t)
-
-    time.sleep(1)
-    cursor_up_code = '\x1b[1A'
-    clear_line_code = '\x1b[2K'
-    while True:
-        print("\t".join([f"{k}: {v}" for k, v in status_dict.items()]))
-        time.sleep(1)  # Delay between updates
-
-        if all(value == 'Done' for value in status_dict.values()):  # If all tasks are done
-            break
-
-        print(cursor_up_code + cursor_up_code + clear_line_code)#(cursor_up_code + clear_line_code) * len(status_dict), end='\r')
-    '''
-
     print('All done.\n')
 
 
-#    for t in threads:
-#        t.join()
 
     with open(paper.issue_fname, 'w') as f:
         f.write(json.dumps(paper_out, indent=2))
